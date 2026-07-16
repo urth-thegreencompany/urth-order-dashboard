@@ -6,17 +6,20 @@
 <title>urth. · Order Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  @font-face{font-family:'Domaine Display'; src:url('fonts/DomaineDisplay-Regular.otf') format('opentype'); font-weight:400; font-style:normal; font-display:swap}
+  @font-face{font-family:'Domaine Display'; src:url('fonts/DomaineDisplay-Medium.otf') format('opentype'); font-weight:500; font-style:normal; font-display:swap}
+  @font-face{font-family:'Domaine Display'; src:url('fonts/DomaineDisplay-Semibold.otf') format('opentype'); font-weight:600; font-style:normal; font-display:swap}
   :root{
-    --cream:#F3EADF; --cream-2:#FBF6EF; --forest:#23372B; --green:#2C4A38;
-    --green-soft:#5B7A66; --clay:#A4432B; --line:#E2D6C6; --ink:#31382F;
+    --cream:#F4ECE2; --cream-2:#FBF6EF; --forest:#0F3C2D; --green:#687259;
+    --green-soft:#8A9680; --clay:#7C4E2E; --line:#E2D6C6; --ink:#31382F;
     --amber:#D98A3A; --amber-bg:#F6E6CD;
     --sky:#5E86A6;  --sky-bg:#DDE7ED;
     --leaf:#4F7C5A; --leaf-bg:#DEE9DA;
     --done:#8A9E86; --done-bg:#E8EDE3;
     --urgent:#B5432B;
-    --serif:'Fraunces', Georgia, serif; --sans:'Nunito Sans', -apple-system, system-ui, sans-serif;
+    --serif:'Domaine Display', Georgia, serif; --sans:'Quicksand', -apple-system, system-ui, sans-serif;
     --radius:16px; --shadow:0 1px 2px rgba(35,55,43,.06), 0 6px 20px rgba(35,55,43,.06);
   }
   *{box-sizing:border-box}
@@ -26,7 +29,7 @@
   button{font-family:var(--sans); cursor:pointer}
   .wrap{max-width:1120px; margin:0 auto; padding:0 16px 110px}
 
-  .strip{background:var(--forest); color:#F3EADF; text-align:center; font-size:13px; padding:8px 12px}
+  .strip{background:var(--forest); color:#F4ECE2; text-align:center; font-size:13px; padding:8px 12px}
   header.top{background:var(--cream); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:40}
   .top-inner{max-width:1120px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
   .brand{display:flex; align-items:baseline; gap:10px}
@@ -41,7 +44,7 @@
 
   nav.tabs{display:flex; gap:6px; padding:14px 0 2px; flex-wrap:wrap}
   .tab{border:1px solid transparent; background:transparent; color:var(--green-soft); padding:8px 15px; border-radius:999px; font-size:14px; font-weight:700}
-  .tab.active{background:var(--forest); color:#F3EADF}
+  .tab.active{background:var(--forest); color:#F4ECE2}
 
   .kpis{display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin:14px 0 6px}
   .kpi{background:var(--cream-2); border:1px solid var(--line); border-radius:var(--radius); padding:12px 13px; box-shadow:var(--shadow)}
@@ -136,7 +139,7 @@
   input[type=text],input[type=number],select,textarea{width:100%; font-family:var(--sans); font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink)}
   .typesel{display:flex; gap:6px; flex-wrap:wrap; margin-top:4px}
   .typesel button{flex:1; min-width:120px; border:1px solid var(--line); background:#fff; color:var(--green-soft); border-radius:10px; padding:9px; font-size:13px; font-weight:700}
-  .typesel button.on{background:var(--forest); color:#F3EADF; border-color:var(--forest)}
+  .typesel button.on{background:var(--forest); color:#F4ECE2; border-color:var(--forest)}
   .combo{position:relative}
   .combo-list{position:absolute; left:0; right:0; top:100%; margin-top:4px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); max-height:240px; overflow:auto; z-index:5; display:none}
   .combo-list.show{display:block}
@@ -153,7 +156,7 @@
   .field-group.show{display:block}
 
   .toast-wrap{position:fixed; left:0; right:0; bottom:18px; display:flex; flex-direction:column; align-items:center; gap:8px; z-index:80; pointer-events:none}
-  .toast{background:var(--forest); color:#F3EADF; padding:12px 16px; border-radius:14px; font-size:13.5px; box-shadow:0 8px 30px rgba(0,0,0,.25); max-width:92%; display:flex; gap:10px; align-items:flex-start; animation:pop .25s ease}
+  .toast{background:var(--forest); color:#F4ECE2; padding:12px 16px; border-radius:14px; font-size:13.5px; box-shadow:0 8px 30px rgba(0,0,0,.25); max-width:92%; display:flex; gap:10px; align-items:flex-start; animation:pop .25s ease}
   .toast .dot{width:9px; height:9px; border-radius:50%; background:#1FA855; margin-top:5px; flex:none; box-shadow:0 0 0 4px rgba(31,168,85,.25)}
   .toast b{color:#fff}
   @keyframes pop{from{transform:translateY(12px); opacity:0}to{transform:none; opacity:1}}
@@ -485,7 +488,7 @@ function renderKPIs(){
 function renderStatusTabs(){
   const all=inRange(); const counts={all:all.length};
   Object.keys(STATUS_META).forEach(k=>counts[k]=all.filter(o=>o.status===k).length);
-  const tabs=[['all','All','#2C4A38','#E4EADF']].concat(Object.entries(STATUS_META).map(([k,m])=>[k,m.label,m.color,m.bg]));
+  const tabs=[['all','All','#687259','#E4EADF']].concat(Object.entries(STATUS_META).map(([k,m])=>[k,m.label,m.color,m.bg]));
   const el=document.getElementById('statusTabs');
   el.innerHTML=tabs.map(([k,label,color,bg])=>`<button class="stab ${statusFilter===k?'on':''}" data-stab="${k}" style="--sc:${color};--sbg:${bg}"><span class="sdot"></span>${label}<span class="scount">${counts[k]}</span></button>`).join('');
   el.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{statusFilter=b.dataset.stab;renderHome();});
