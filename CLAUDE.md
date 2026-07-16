@@ -5,7 +5,9 @@ Replaces a monthly-tab Excel sheet. B2C orders only for now (Shopify B2B is phas
 
 ## Stack
 - Single static `index.html` (HTML/CSS/vanilla JS — no build step, no framework)
-- Hosted on **GitHub Pages** (free, static hosting)
+- Hosted on **Vercel**, git-connected to `urth-thegreencompany/urth-order-dashboard` on GitHub —
+  every push to `main` auto-deploys, no manual redeploy step. (Migrated from GitHub Pages, which
+  is now unpublished — Vercel is the sole live host.)
 - Backend: **Supabase** (Postgres + Auth + Realtime)
 - Supabase JS client loaded via CDN: `@supabase/supabase-js@2`
 
@@ -83,9 +85,11 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
 - Subscriptions auto-surface as a card on whichever day matches their `preferred_day`.
 - Calendar tab is passcode-gated client-side (not real auth) — passcode is `urth@001122`.
   This is a soft privacy gate, not security; real access control is Supabase Auth (login screen).
-- Design language matches the urth. Shopify site: cream background (#F3EADF), deep forest green
-  header (#23372B), terracotta/clay accent (#A4432B), serif "Fraunces" for headings, "Nunito Sans"
-  for body text.
+- Design language matches the official Urth brand book (`Branding/Urth Brand book_Final.pdf`,
+  not tracked in git — local reference only): Ivory background (#F4ECE2), Forest green header
+  (#0F3C2D), Grass green accent (#687259), Soil brown/clay accent (#7C4E2E), serif "Domaine
+  Display" for headings (self-hosted from `fonts/`, a Klim Test license — swap for a licensed
+  build if this ever needs to scale), "Quicksand" for body text.
 - Mobile is the primary usage surface — ops/logistics use phones. Sheets (add/edit order,
   reschedule) are bottom-sheet style with a sticky "‹ Back" button and support the phone's
   native back gesture (via `history.pushState`/`popstate`) to close.
@@ -102,8 +106,11 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
 
 ## Working conventions
 - Keep this a single-file app unless there's a strong reason to split it — simplicity was a
-  deliberate choice for a non-technical owner to host on GitHub Pages with no build step.
+  deliberate choice for a non-technical owner to host with no build step.
 - Preserve the design system (colors/fonts above) in any new UI.
 - When adding DB columns, always use `alter table ... add column if not exists ...` so
   migrations are safe to re-run, and tell the user exactly what SQL to paste into the
   Supabase SQL Editor (they are non-technical and self-serve there).
+- Git push access to the org repo is via an SSH deploy key (not a personal token) — see
+  `~/.ssh/config` (`Host github-urth`) on the dev machine. Commit + push to `main` autonomously
+  without asking each time; Vercel picks up the rest automatically.
