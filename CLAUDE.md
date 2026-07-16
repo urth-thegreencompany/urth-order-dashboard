@@ -137,6 +137,32 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
 - Bulk CSV upload UI for the product catalogue (currently a placeholder toast; real bulk
   import is done manually via Supabase Table Editor).
 
+## Security hardening (as deployed)
+- **XSS**: every user-entered value rendered into `innerHTML` goes through the `esc()` helper
+  (defined next to `fmtINR`). Never interpolate raw order/customer/product data into a template
+  literal that lands in `innerHTML` — stored XSS here would expose every staff session.
+  `textContent` assignments don't need it.
+- **CDN pinning**: supabase-js is pinned to an exact version with SRI
+  (`@supabase/supabase-js@2.110.7/dist/umd/supabase.js` + `integrity` + `crossorigin`). To bump:
+  fetch the new version's `dist/umd/supabase.js` from jsdelivr, recompute
+  `sha384` (`openssl dgst -sha384 -binary file | openssl base64 -A`), update both attrs.
+  Don't revert to the floating `@2` URL.
+- **Headers**: `vercel.json` sets CSP, HSTS, nosniff, frame-ancestors 'none', Referrer-Policy,
+  Permissions-Policy, X-Robots-Tag noindex, and cache headers for `assets/`/`fonts/`. If a new
+  external origin is ever added (script, font, API), it must also be added to the CSP or it will
+  be blocked in production (headers don't apply on `file://` or local dev servers).
+- **PII hygiene**: `*.xlsx`, `*.csv`, the legacy import SQL, and `Branding/` are gitignored —
+  customer exports must never be committed. The repo also serves as the deploy source, so
+  anything tracked is one push away from being public-adjacent.
+- **Known gap (needs owner action in Supabase Dashboard)**: public email signup was found ENABLED
+  (`disable_signup: false`). Anyone with the (public) anon key can self-register and become an
+  `authenticated` user with full RLS read/write. Fix: Dashboard → Authentication → Sign In / Providers
+  → turn OFF "Allow new users to sign up". Verify with
+  `curl -s $SB_URL/auth/v1/settings -H "apikey: $ANON_KEY"` → `"disable_signup":true`.
+- Favicons (`assets/favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`) are generated
+  from `Branding/Logo/Symbol/PNG/Symbol colour.png` via Pillow (trim bbox → fit square; the
+  apple icon gets a solid Ivory background).
+
 ## Working conventions
 - Keep this a single-file app unless there's a strong reason to split it — simplicity was a
   deliberate choice for a non-technical owner to host with no build step.

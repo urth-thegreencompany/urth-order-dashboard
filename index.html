@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Internal order-tracking dashboard for urth. — The Green Company" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#0F3C2D" />
+<meta name="color-scheme" content="light" />
+<meta name="apple-mobile-web-app-title" content="urth. Orders" />
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
 <title>urth. · Order Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -273,16 +281,60 @@
     .sheet-top{margin:0 -15px 10px;padding:13px 15px}
     .typesel button{min-width:calc(50% - 3px)}
   }
+  /* --- production polish: motion, focus, hover, refinement --- */
+  :root{color-scheme:light}
+  ::selection{background:var(--forest);color:var(--cream)}
+  button,.chip,.stab,.tab,.iconbtn,.advbtn,.dbtn,.ctlink,.lockbtn,.sheet-back,.beyond,.bn,input,select,textarea{transition:background-color .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .1s ease,opacity .16s ease}
+  :where(button,a,input,select,textarea,[contenteditable]):focus-visible{outline:2.5px solid var(--clay);outline-offset:2px}
+  .btn:active,.advbtn:active,.iconbtn:active,.chip:active,.stab:active{transform:translateY(1px)}
+  @media(hover:hover){
+    .btn:hover{filter:brightness(1.08);box-shadow:0 3px 12px rgba(35,55,43,.22)}
+    .btn.ghost:hover{filter:none;background:#fff;border-color:var(--green-soft)}
+    .tab:hover:not(.active){color:var(--green);background:rgba(255,255,255,.55)}
+    .iconbtn:hover{border-color:var(--green-soft);color:var(--green)}
+    .iconbtn.danger:hover{border-color:var(--urgent)}
+    .chip:hover:not(.on),.stab:hover:not(.on),.ctlink:hover,.lockbtn:hover{border-color:var(--green-soft)}
+    .advbtn:hover{background:#164A38}
+    .dbtn:hover:not(.on){color:var(--green)}
+    .beyond:hover{background:var(--cream-2)}
+    .card{transition:box-shadow .18s ease}
+    .card:hover{box-shadow:0 2px 5px rgba(35,55,43,.09),0 12px 30px rgba(35,55,43,.11)}
+    .card.urgent:hover{box-shadow:0 0 0 2px var(--urgent),0 12px 30px rgba(35,55,43,.13)}
+    .orow{transition:box-shadow .15s ease}
+    .orow:hover{box-shadow:var(--shadow)}
+  }
+  header.top{background:rgba(244,236,226,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .scrim{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+  .scrim.show{animation:scrimIn .18s ease}
+  .scrim.show .sheet{animation:sheetUp .3s cubic-bezier(.22,.9,.3,1)}
+  @keyframes scrimIn{from{opacity:0}}
+  @keyframes sheetUp{from{transform:translateY(30px);opacity:.4}}
+  @media(min-width:560px){ .scrim.show .sheet{animation-name:sheetPop} }
+  @keyframes sheetPop{from{transform:translateY(14px) scale(.985);opacity:.4}}
+  .kpi .val,.val-amt,.orow-val,.cal-cell .cr,.scount,.cal-sum{font-variant-numeric:tabular-nums}
+  .scroll,.combo-list,.sheet{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .scroll::-webkit-scrollbar,.combo-list::-webkit-scrollbar,.sheet::-webkit-scrollbar{width:8px;height:8px}
+  .scroll::-webkit-scrollbar-thumb,.combo-list::-webkit-scrollbar-thumb,.sheet::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+  .scroll::-webkit-scrollbar-thumb:hover{background:var(--green-soft)}
+  /* mobile: ≥16px form text stops iOS focus-zoom; roomier stepper tap targets */
+  @media(max-width:760px){
+    input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],input[type=search],select,textarea,#orderSearch{font-size:16px}
+    .step{padding:9px 0}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+    .cal-cell:hover{transform:none}
+  }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.js" integrity="sha384-hazsLVND17GNLVdtV19te6qbFT2YuLgl8SamcF+QR5eIOC+W4dGKrUNMxU1jH1zD" crossorigin="anonymous"></script>
 </head>
 <body>
   <div id="login"><div class="box">
     <img class="login-logo" src="assets/logo-primary.png" alt="urth. — The Green Company" />
     <h2>Welcome back</h2>
     <div class="lsub">Order Dashboard</div>
-    <input type="email" id="liEmail" placeholder="Email" autocomplete="username" />
-    <input type="password" id="liPass" placeholder="Password" autocomplete="current-password" />
+    <input type="email" id="liEmail" placeholder="Email" aria-label="Email" autocomplete="username" />
+    <input type="password" id="liPass" placeholder="Password" aria-label="Password" autocomplete="current-password" />
     <button class="btn" id="liBtn">Sign in</button>
     <p class="note" id="liErr" style="color:var(--urgent);min-height:18px;margin-top:12px"></p>
   </div></div>
@@ -336,9 +388,9 @@
       <div id="calContent" style="display:none">
       <div class="cal-head">
         <div class="cal-nav">
-          <button class="iconbtn" id="calPrev">‹</button>
+          <button class="iconbtn" id="calPrev" aria-label="Previous month">‹</button>
           <h2 id="calLabel"></h2>
-          <button class="iconbtn" id="calNext">›</button>
+          <button class="iconbtn" id="calNext" aria-label="Next month">›</button>
         </div>
         <div class="cal-sum" id="calSum"></div>
       </div>
@@ -376,7 +428,7 @@
 
   <!-- ADD / EDIT ORDER -->
   <div class="scrim" id="scrim">
-    <div class="sheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="formTitle">
       <div class="sheet-top"><button class="sheet-back" data-close="scrim">‹ Back</button><h2 id="formTitle">Add order</h2></div>
       <div class="hint" id="formOno"></div>
 
@@ -440,7 +492,7 @@
     </div>
   </div>
 
-  <div class="scrim" id="rescrim"><div class="sheet" style="max-width:380px">
+  <div class="scrim" id="rescrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="Reschedule order" style="max-width:380px">
     <div class="sheet-top"><button class="sheet-back" data-close="rescrim">‹ Back</button><h2>Reschedule order</h2></div>
     <div class="hint" id="reInfo"></div>
     <label>New delivery date</label>
@@ -448,7 +500,7 @@
     <div class="modal-actions"><button class="btn ghost" id="reCancel">Back</button><button class="btn" id="reSave">Move order</button></div>
   </div></div>
 
-  <div class="scrim" id="editGate"><div class="sheet" style="max-width:380px">
+  <div class="scrim" id="editGate"><div class="sheet" role="dialog" aria-modal="true" aria-label="Unlock editing" style="max-width:380px">
     <div class="sheet-top"><button class="sheet-back" data-close="editGate">‹ Back</button><h2>Unlock editing</h2></div>
     <p class="hint">Viewing is open to everyone. Enter the team passcode to add or change orders.</p>
     <label>Passcode</label>
@@ -457,7 +509,7 @@
     <div class="modal-actions"><button class="btn ghost" data-close="editGate">Cancel</button><button class="btn" id="editUnlockBtn">Unlock editing</button></div>
   </div></div>
 
-  <div class="toast-wrap" id="toasts"></div>
+  <div class="toast-wrap" id="toasts" role="status" aria-live="polite"></div>
 
 <script>
 /* ===== Supabase connection ===== */
@@ -489,6 +541,8 @@ const VASES=[{name:'Rosie Black Vase',price:900},{name:'Chrome Vase',price:700},
 const WEEK=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+/* escape user-entered data before it goes into innerHTML — stored XSS would expose every staff session */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtINR=n=>'₹'+Number(n||0).toLocaleString('en-IN');
 const parseD=s=>new Date(s+'T00:00:00');
 const todayISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -520,7 +574,7 @@ async function fetchAllOrders(){
   let all=[],from=0,size=1000;
   while(true){
     const {data,error}=await db.from('orders').select('*').order('delivery_date').order('id').range(from,from+size-1);
-    if(error){toast('Could not load orders: '+error.message);break;}
+    if(error){toast('Could not load orders: '+esc(error.message));break;}
     all=all.concat(data); if(!data.length||data.length<size)break; from+=size;
   }
   return all.map(fromDB);
@@ -618,14 +672,14 @@ function orderCard(o){
   const m=STATUS_META[o.status]||STATUS_META.new;
   const cls=['card',o.status,o.urgent?'urgent':''].join(' ');
   const flowers=(o.det&&o.det!==o.type)?'':((CATALOG.find(p=>p.name===o.det)||{}).flowers||'');
-  const makerHtml=o.maker?`<span class="maker-tag">Maker: <b>${o.maker}</b></span>`:`<span class="maker-tag none">Maker: unassigned</span>`;
+  const makerHtml=o.maker?`<span class="maker-tag">Maker: <b>${esc(o.maker)}</b></span>`:`<span class="maker-tag none">Maker: unassigned</span>`;
   const waN=waNumber(o.phone);
-  const contactHtml=o.phone?`<span class="contact"><a class="ctlink" href="tel:${phoneDigits(o.phone)}">☎ ${o.phone}</a>${waN?`<a class="ctlink wa" href="https://wa.me/${waN}" target="_blank" rel="noopener">WhatsApp</a>`:''}</span>`:'';
+  const contactHtml=o.phone?`<span class="contact"><a class="ctlink" href="tel:${phoneDigits(o.phone)}">☎ ${esc(o.phone)}</a>${waN?`<a class="ctlink wa" href="https://wa.me/${waN}" target="_blank" rel="noopener">WhatsApp</a>`:''}</span>`:'';
   const cxl=o.status==='cancelled';
   const nx=nextStage(o.status);
   return `<div class="${cls}" data-id="${o.id}">
     <div class="row1">
-      <div><div class="cust">${o.cust||'—'}</div><div class="ono">${o.no||'#—'} · ${fmtDayDate(o.dd)}${o.time?' · '+o.time:''}</div></div>
+      <div><div class="cust">${esc(o.cust)||'—'}</div><div class="ono">${esc(o.no)||'#—'} · ${fmtDayDate(o.dd)}${o.time?' · '+esc(o.time):''}</div></div>
       <div class="badges">
         <span class="statuspill" style="background:${m.bg};color:${m.color}">${m.label}</span>
         ${o.polaroid?'<span class="badge pola">📷 Polaroid</span>':''}
@@ -633,22 +687,22 @@ function orderCard(o){
         <span class="badge ${o.repeat?'repeat':'new'}">${o.repeat?'REPEAT':'NEW'}</span>
       </div>
     </div>
-    <div class="prod">${productLine(o)} <span class="typepill">${typeLabel(o)}</span></div>
+    <div class="prod">${esc(productLine(o))} <span class="typepill">${esc(typeLabel(o))}</span></div>
     <div class="meta">
       <span class="val-amt">${fmtINR(o.val)}</span>
-      ${o.src?`<span class="pill">${o.src}</span>`:''}${o.trans?`<span>${o.trans}</span>`:''}
-      <span>${/pending/i.test(o.pay)?'⚠︎ <b>Pending</b>':(o.pay?('✓ '+o.pay):'')}</span>${makerHtml}${contactHtml}
+      ${o.src?`<span class="pill">${esc(o.src)}</span>`:''}${o.trans?`<span>${esc(o.trans)}</span>`:''}
+      <span>${/pending/i.test(o.pay)?'⚠︎ <b>Pending</b>':(o.pay?('✓ '+esc(o.pay)):'')}</span>${makerHtml}${contactHtml}
     </div>
-    ${flowers?`<div class="flowers">${flowers}</div>`:''}
-    ${o.note?`<div class="note-line">✎ “${o.note}”</div>`:''}
-    ${o.remarks?`<div class="remark-line">Remarks: ${o.remarks}</div>`:''}
-    <div class="addr" id="addr-${o.id}">📍 ${o.addr||'No address on file'}${contactHtml?'<div style="margin-top:7px">'+contactHtml+'</div>':''}</div>
+    ${flowers?`<div class="flowers">${esc(flowers)}</div>`:''}
+    ${o.note?`<div class="note-line">✎ “${esc(o.note)}”</div>`:''}
+    ${o.remarks?`<div class="remark-line">Remarks: ${esc(o.remarks)}</div>`:''}
+    <div class="addr" id="addr-${o.id}">📍 ${esc(o.addr)||'No address on file'}${contactHtml?'<div style="margin-top:7px">'+contactHtml+'</div>':''}</div>
     ${cxl?'':`<div class="stepper">${STAGE_FLOW.map((s,i)=>{const sm=STATUS_META[s];const st=i<STAGE_FLOW.indexOf(o.status)?'done':(s===o.status?'cur':'');return `<button class="step ${st}" data-step="${o.id}" data-s="${s}" style="--sc:${sm.color}" title="${sm.label}"><span class="sdot2"></span></button>`;}).join('')}</div>`}
     <div class="card-actions">
       ${nx&&!cxl?`<button class="advbtn" data-adv="${o.id}" data-next="${nx}">Mark ${STATUS_META[nx].label} →</button>`:''}
       <select class="mini" data-maker="${o.id}"><option value="">Assign maker</option>${MAKERS.map(mk=>`<option ${o.maker===mk?'selected':''}>${mk}</option>`).join('')}</select>
-      <button class="iconbtn ${o.urgent?'on':''}" data-urg="${o.id}" title="Urgent">⚡</button>
-      <button class="iconbtn" data-addr="${o.id}">📍</button>
+      <button class="iconbtn ${o.urgent?'on':''}" data-urg="${o.id}" title="Urgent" aria-label="Toggle urgent" aria-pressed="${o.urgent}">⚡</button>
+      <button class="iconbtn" data-addr="${o.id}" title="Address" aria-label="Show address">📍</button>
       ${cxl?`<button class="iconbtn" data-restore="${o.id}">Restore</button>`
            :`<button class="iconbtn" data-resc="${o.id}">Reschedule</button><button class="iconbtn danger" data-cxl="${o.id}">Cancel</button>`}
       <button class="iconbtn" data-edit="${o.id}">Edit</button>
@@ -660,8 +714,8 @@ function orderRow(o){
   const nx=nextStage(o.status), cxl=o.status==='cancelled';
   return `<div class="orow ${o.urgent&&!cxl?'urg':''} ${cxl?'cxl':''}" data-id="${o.id}">
     <div class="orow-main">
-      <div class="orow-cust">${o.urgent&&!cxl?'⚡ ':''}${o.cust||'—'}${o.polaroid?' 📷':''}</div>
-      <div class="orow-sub">${o.no||'#—'} · ${o.time?o.time.split(' ')[0]:'—'} · ${productLine(o)}</div>
+      <div class="orow-cust">${o.urgent&&!cxl?'⚡ ':''}${esc(o.cust)||'—'}${o.polaroid?' 📷':''}</div>
+      <div class="orow-sub">${esc(o.no)||'#—'} · ${o.time?esc(o.time.split(' ')[0]):'—'} · ${esc(productLine(o))}</div>
     </div>
     <span class="orow-val">${fmtINR(o.val)}</span>
     <span class="statuspill" style="background:${m.bg};color:${m.color}">${m.label}</span>
@@ -676,7 +730,7 @@ function dayHtml(date){
   if(!list.length&&!subs.length) return '';
   const active=list.filter(o=>o.status!=='cancelled').length;
   let html=`<div class="day-sec"><div class="day-head"><h2>${fmtDayDate(date)}</h2><span class="cnt">${active} order${active!==1?'s':''}</span></div>`;
-  if(subs.length) html+=`<div class="sub-day"><h3>✿ Subscriptions — ${dayName}</h3><ul>${subs.map(s=>`<li><span><b>${s.client}</b> · ${s.type}</span><span>${fmtINR(s.val)} · ${s.prefs}</span></li>`).join('')}</ul></div>`;
+  if(subs.length) html+=`<div class="sub-day"><h3>✿ Subscriptions — ${dayName}</h3><ul>${subs.map(s=>`<li><span><b>${esc(s.client)}</b> · ${esc(s.type)}</span><span>${fmtINR(s.val)} · ${esc(s.prefs)}</span></li>`).join('')}</ul></div>`;
   if(list.length) html+=renderOrderList(list);
   return html+`</div>`;
 }
@@ -713,7 +767,7 @@ function renderPresets(){
 }
 function renderDensityToggle(){
   const host=document.getElementById('densityToggle'); if(!host)return;
-  host.innerHTML=`<button class="dbtn ${density==='cards'?'on':''}" data-d="cards" title="Card view">▦</button><button class="dbtn ${density==='list'?'on':''}" data-d="list" title="List view">☰</button>`;
+  host.innerHTML=`<button class="dbtn ${density==='cards'?'on':''}" data-d="cards" title="Card view" aria-label="Card view">▦</button><button class="dbtn ${density==='list'?'on':''}" data-d="list" title="List view" aria-label="List view">☰</button>`;
   host.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{density=b.dataset.d;localStorage.setItem('urth_density',density);renderHome();});
 }
 function clearSearchState(){searchQuery='';const el=document.getElementById('orderSearch');if(el)el.value='';}
@@ -724,8 +778,8 @@ function renderHome(){
   if(searchQuery.trim()){
     if(heading)heading.textContent='Search results';
     const res=searchResults(), CAP=100, shown=res.slice(0,CAP);
-    host.innerHTML=`<div class="results-head"><span><b>${res.length}</b> result${res.length!==1?'s':''} for “${searchQuery.trim()}”${res.length>CAP?` · showing first ${CAP}, refine to narrow`:''}</span><button class="btn ghost sm" id="clearSearch">Clear search</button></div>`
-      +(res.length?renderOrderList(shown):`<div class="empty">No orders match “${searchQuery.trim()}”.</div>`);
+    host.innerHTML=`<div class="results-head"><span><b>${res.length}</b> result${res.length!==1?'s':''} for “${esc(searchQuery.trim())}”${res.length>CAP?` · showing first ${CAP}, refine to narrow`:''}</span><button class="btn ghost sm" id="clearSearch">Clear search</button></div>`
+      +(res.length?renderOrderList(shown):`<div class="empty">No orders match “${esc(searchQuery.trim())}”.</div>`);
   } else if(overdueMode){
     if(heading)heading.textContent='Overdue';
     const res=overdueOrders();
@@ -746,8 +800,8 @@ function renderHome(){
 function bindCards(){
   document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.step,b.dataset.s));
   document.querySelectorAll('[data-adv]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.adv,b.dataset.next));
-  document.querySelectorAll('[data-maker]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.maker);o.maker=s.value;renderCurrent();pushUpdate(o.id,{maker:s.value});if(s.value)toast(`Assigned <b>${s.value}</b> to ${o.cust} · ${o.no}.`);});
-  document.querySelectorAll('[data-urg]').forEach(b=>b.onclick=()=>{if(!editUnlocked)return;const o=byId(+b.dataset.urg);o.urgent=!o.urgent;renderCurrent();pushUpdate(o.id,{urgent:o.urgent});});
+  document.querySelectorAll('[data-maker]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.maker);if(!o)return;o.maker=s.value;renderCurrent();pushUpdate(o.id,{maker:s.value});if(s.value)toast(`Assigned <b>${esc(s.value)}</b> to ${esc(o.cust)} · ${esc(o.no)}.`);});
+  document.querySelectorAll('[data-urg]').forEach(b=>b.onclick=()=>{if(!editUnlocked)return;const o=byId(+b.dataset.urg);if(!o)return;o.urgent=!o.urgent;renderCurrent();pushUpdate(o.id,{urgent:o.urgent});});
   document.querySelectorAll('[data-addr]').forEach(b=>b.onclick=()=>document.getElementById('addr-'+b.dataset.addr).classList.toggle('show'));
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(+b.dataset.edit));
   document.querySelectorAll('[data-resc]').forEach(b=>b.onclick=()=>openReschedule(+b.dataset.resc));
@@ -759,14 +813,14 @@ function renderCurrent(){if(currentView==='home')renderHome();else if(currentVie
 async function pushUpdate(id,fields){
   recentLocal.add(id+':'+(fields.status||''));setTimeout(()=>recentLocal.delete(id+':'+(fields.status||'')),4000);
   const {error}=await db.from('orders').update(fields).eq('id',id);
-  if(error) toast('Could not save change: '+error.message);
+  if(error) toast('Could not save change: '+esc(error.message));
 }
 function changeStatus(id,s){
   if(!editUnlocked)return;
-  const o=byId(id);o.status=s;renderCurrent();
+  const o=byId(id);if(!o)return;o.status=s;renderCurrent();
   const m=STATUS_META[s];
-  if(s==='dispatched') toast(`<b>${o.no} · ${o.cust}</b> — ready for dispatch. Logistics notified · 📍 ${o.addr||'address on file'}`);
-  else if(m) toast(`<b>${o.no} · ${o.cust}</b> — ${m.label}.`);
+  if(s==='dispatched') toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> — ready for dispatch. Logistics notified · 📍 ${esc(o.addr)||'address on file'}`);
+  else if(m) toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> — ${m.label}.`);
   pushUpdate(id,{status:s});
 }
 let cxlArmed=null;
@@ -778,13 +832,13 @@ function confirmCancel(btn,id){
 
 /* ===== reschedule ===== */
 let reId=null;
-function openReschedule(id){if(!requireEdit())return;reId=id;const o=byId(id);document.getElementById('reInfo').textContent=`${o.no} · ${o.cust} — currently ${fmtDayDate(o.dd)}`;document.getElementById('reDate').value=o.dd;openSheet('rescrim');}
+function openReschedule(id){if(!requireEdit())return;const o=byId(id);if(!o)return;reId=id;document.getElementById('reInfo').textContent=`${o.no} · ${o.cust} — currently ${fmtDayDate(o.dd)}`;document.getElementById('reDate').value=o.dd;openSheet('rescrim');}
 document.getElementById('reCancel').onclick=()=>closeSheet('rescrim');
 document.getElementById('rescrim').onclick=e=>{if(e.target.id==='rescrim')closeSheet('rescrim');};
 document.getElementById('reSave').onclick=()=>{
   const nd=document.getElementById('reDate').value;if(!nd)return;
-  const o=byId(reId),old=o.dd;o.dd=nd;closeSheet('rescrim');renderCurrent();
-  toast(`<b>${o.no} · ${o.cust}</b> — rescheduled ${fmtDayDate(old)} → ${fmtDayDate(nd)}.`);
+  const o=byId(reId);if(!o)return;const old=o.dd;o.dd=nd;closeSheet('rescrim');renderCurrent();
+  toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> — rescheduled ${fmtDayDate(old)} → ${fmtDayDate(nd)}.`);
   pushUpdate(reId,{delivery_date:nd});
 };
 
@@ -812,7 +866,7 @@ function showCalendar(){
   if(calUnlocked){gate.style.display='none';content.style.display='';renderCalendar();}
   else{gate.style.display='';content.style.display='none';setTimeout(()=>{const p=document.getElementById('calPass');if(p)p.focus();},50);}
 }
-document.getElementById('calUnlock').onclick=()=>{if(document.getElementById('calPass').value==='urth@001122'){calUnlocked=true;document.getElementById('calPass').value='';document.getElementById('calErr').textContent='';showCalendar();}else document.getElementById('calErr').textContent='Incorrect passcode. Try again.';};
+document.getElementById('calUnlock').onclick=()=>{if(document.getElementById('calPass').value===EDIT_PASS){calUnlocked=true;document.getElementById('calPass').value='';document.getElementById('calErr').textContent='';showCalendar();}else document.getElementById('calErr').textContent='Incorrect passcode. Try again.';};
 document.getElementById('calPass').onkeydown=e=>{if(e.key==='Enter')document.getElementById('calUnlock').click();};
 
 /* ===== SUBSCRIPTIONS ===== */
@@ -821,17 +875,17 @@ function subFlag(s){if(s.status==='Expired')return '<span class="tag exp">Expire
 function renderSubs(){
   const t=document.getElementById('subTable'), ce=editUnlocked?'contenteditable':'';
   t.innerHTML=`<thead><tr><th>Client</th><th>Type</th><th>Day</th><th>Flowers</th><th>Value</th><th>Last</th><th>End</th><th>Status</th></tr></thead><tbody>${SUBS.map((s,i)=>`<tr>
-    <td ${ce} data-k="client" data-i="${i}"><b>${s.client}</b></td><td ${ce} data-k="type" data-i="${i}">${s.type||''}</td>
-    <td ${ce} data-k="day" data-i="${i}">${s.day||''}</td><td ${ce} data-k="prefs" data-i="${i}">${s.prefs||''}</td>
-    <td ${ce} data-k="val" data-i="${i}">${fmtINR(s.val)}</td><td ${ce} data-k="last" data-i="${i}">${s.last||''}</td>
-    <td ${ce} data-k="end" data-i="${i}">${s.end||''}</td><td>${subFlag(s)}</td></tr>`).join('')}</tbody>`;
+    <td ${ce} data-k="client" data-i="${i}"><b>${esc(s.client)}</b></td><td ${ce} data-k="type" data-i="${i}">${esc(s.type)}</td>
+    <td ${ce} data-k="day" data-i="${i}">${esc(s.day)}</td><td ${ce} data-k="prefs" data-i="${i}">${esc(s.prefs)}</td>
+    <td ${ce} data-k="val" data-i="${i}">${fmtINR(s.val)}</td><td ${ce} data-k="last" data-i="${i}">${esc(s.last)}</td>
+    <td ${ce} data-k="end" data-i="${i}">${esc(s.end)}</td><td>${subFlag(s)}</td></tr>`).join('')}</tbody>`;
   if(editUnlocked) bindEditable(t,SUBS,'subscriptions',SUBCOL);
 }
 document.getElementById('addSub').onclick=async()=>{
   if(!requireEdit())return;
   const row={client:'New client',type:'Weekly (1 Month)',preferred_day:'Monday',status:'On-Going',value_inr:0,flower_prefs:'—'};
   const {data,error}=await db.from('subscriptions').insert(row).select().single();
-  if(error)return toast('Add failed: '+error.message);
+  if(error)return toast('Add failed: '+esc(error.message));
   SUBS.unshift({id:data.id,client:data.client,type:data.type,day:data.preferred_day,status:data.status,val:data.value_inr,prefs:data.flower_prefs,last:data.last_delivery,end:data.end_date});renderSubs();
 };
 
@@ -844,12 +898,12 @@ function renderProds(){
   const t=document.getElementById('prodTable'), ce=editUnlocked?'contenteditable':'';
   const typeCell=(p,i)=>editUnlocked
     ? `<select class="mini" data-ptype="${i}">${['Bouquet','Vase Arrangement','Loose Flower','Foliage'].map(x=>`<option ${p.type===x?'selected':''}>${x}</option>`).join('')}</select>`
-    : (p.type||'');
+    : esc(p.type);
   t.innerHTML=`<thead><tr><th>Product</th><th>Type</th><th>Price</th><th>Flowers / contents</th><th></th></tr></thead><tbody>${rows.map(({p,i})=>`<tr>
-    <td ${ce} data-k="name" data-i="${i}"><b>${p.name}</b></td>
+    <td ${ce} data-k="name" data-i="${i}"><b>${esc(p.name)}</b></td>
     <td>${typeCell(p,i)}</td>
     <td ${ce} data-k="price" data-i="${i}">${p.price?fmtINR(p.price):'—'}</td>
-    <td ${ce} data-k="flowers" data-i="${i}">${p.flowers||''}</td>
+    <td ${ce} data-k="flowers" data-i="${i}">${esc(p.flowers)}</td>
     <td>${editUnlocked?`<button class="iconbtn" data-del="${i}">Remove</button>`:''}</td></tr>`).join('')}</tbody>`;
   if(!editUnlocked)return;
   bindEditable(t,CATALOG,'products',PRODCOL);
@@ -861,7 +915,7 @@ document.getElementById('prodTypeFilter').onchange=e=>{prodFilter.type=e.target.
 document.getElementById('addProd').onclick=async()=>{
   if(!requireEdit())return;
   const {data,error}=await db.from('products').insert({name:'New product',type:'Bouquet',price_inr:0,flowers:'—'}).select().single();
-  if(error)return toast('Add failed: '+error.message);
+  if(error)return toast('Add failed: '+esc(error.message));
   CATALOG.unshift({id:data.id,name:data.name,type:data.type,price:data.price_inr,flowers:data.flowers});renderProds();
 };
 document.getElementById('uploadCsv').onclick=()=>{if(!requireEdit())return;toast('CSV import: use Supabase → Table Editor → products → Import for bulk uploads.');};
@@ -901,7 +955,7 @@ function openAdd(){
 }
 function openEdit(id){
   if(!requireEdit())return;
-  const o=byId(id);editId=id;
+  const o=byId(id);if(!o)return;editId=id;
   document.getElementById('formTitle').textContent='Edit order';document.getElementById('formOno').textContent='Order '+o.no;
   setFormType('catalogue');document.getElementById('prodSearch').value=o.det||o.type||'';document.getElementById('autofill').textContent='';
   const fNo=document.getElementById('fNo');fNo.readOnly=false;fNo.value=o.no||'';document.getElementById('fNoHint').textContent='';
@@ -922,7 +976,7 @@ function wireCombo(inputId,listId,itemsRef,onPick){
   const inp=document.getElementById(inputId),list=document.getElementById(listId);
   const getItems=()=>(typeof itemsRef==='function'?itemsRef():itemsRef)||[];
   inp.oninput=()=>{const items=getItems();const q=inp.value.toLowerCase();const m=items.filter(x=>x.name.toLowerCase().includes(q)).slice(0,40);
-    list.innerHTML=m.map(x=>`<div data-v="${x.name}">${x.name}<span>${x.price?fmtINR(x.price):''}</span></div>`).join('')||'<div style="color:var(--green-soft)">No match — logged as typed.</div>';
+    list.innerHTML=m.map(x=>`<div data-v="${esc(x.name)}">${esc(x.name)}<span>${x.price?fmtINR(x.price):''}</span></div>`).join('')||'<div style="color:var(--green-soft)">No match — logged as typed.</div>';
     list.classList.add('show');list.querySelectorAll('[data-v]').forEach(d=>d.onclick=()=>{onPick(getItems().find(y=>y.name===d.dataset.v));list.classList.remove('show');});};
   inp.onblur=()=>setTimeout(()=>list.classList.remove('show'),150);
 }
@@ -945,19 +999,19 @@ document.getElementById('saveAdd').onclick=async()=>{
     remarks:document.getElementById('fRemarks').value.trim(),polaroid:document.getElementById('fPolaroid').checked,
     urgent:document.getElementById('fUrgent').checked};
   if(editId!==null){
-    const o=byId(editId);Object.assign(o,common,{no:document.getElementById('fNo').value.trim()||o.no});closeForm();renderCurrent();
+    const o=byId(editId);if(!o)return;Object.assign(o,common,{no:document.getElementById('fNo').value.trim()||o.no});closeForm();renderCurrent();
     const {error}=await db.from('orders').update(toDB(o)).eq('id',editId);
-    toast(error?('Update failed: '+error.message):`Updated ${o.no} · ${cust}.`);
+    toast(error?('Update failed: '+esc(error.message)):`Updated ${esc(o.no)} · ${esc(cust)}.`);
   }else{
     const src=common.src, typed=document.getElementById('fNo').value.trim();
     let no,usedAuto=false;
     if(src==='Website'&&typed&&typed!=='#'+NEXT_NO){no=typed;} else {no='#'+NEXT_NO;usedAuto=true;}
     const o={no,status:'new',...common};
     const {data,error}=await db.from('orders').insert(toDB(o)).select().single();
-    if(error)return toast('Save failed: '+error.message);
+    if(error)return toast('Save failed: '+esc(error.message));
     if(usedAuto)NEXT_NO++;
     const added=fromDB(data);ORDERS.push(added);recomputeRepeat();closeForm();setRange(added.dd,added.dd<rangeToSafe()?rangeToSafe():added.dd);
-    toast(`<b>${added.no}</b> · ${cust} added — ${det||product}.${added.polaroid?' 📷':''}${added.urgent?' ⚡ Urgent.':''}`);
+    toast(`<b>${esc(added.no)}</b> · ${esc(cust)} added — ${esc(det||product)}.${added.polaroid?' 📷':''}${added.urgent?' ⚡ Urgent.':''}`);
   }
 };
 
@@ -967,7 +1021,7 @@ function startRealtime(){
     const {eventType,new:nw,old:od}=payload;
     if(eventType==='INSERT'){if(!ORDERS.find(o=>o.id===nw.id)){ORDERS.push(fromDB(nw));recomputeRepeat();}}
     else if(eventType==='UPDATE'){const i=ORDERS.findIndex(o=>o.id===nw.id);if(i>=0)ORDERS[i]=fromDB(nw);
-      if(nw.status==='dispatched'&&!recentLocal.has(nw.id+':dispatched'))toast(`<b>${nw.order_no} · ${nw.customer_name}</b> — ready for dispatch · 📍 ${nw.address||''}`);}
+      if(nw.status==='dispatched'&&!recentLocal.has(nw.id+':dispatched'))toast(`<b>${esc(nw.order_no)} · ${esc(nw.customer_name)}</b> — ready for dispatch · 📍 ${esc(nw.address)}`);}
     else if(eventType==='DELETE'){const i=ORDERS.findIndex(o=>o.id===od.id);if(i>=0)ORDERS.splice(i,1);}
     renderCurrent();
   }).subscribe();
