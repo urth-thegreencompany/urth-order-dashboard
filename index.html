@@ -140,7 +140,7 @@
   .sheet h2{font-size:22px; margin-bottom:2px}
   .sheet .hint{font-size:12.5px; color:var(--green-soft); margin-bottom:12px}
   label{display:block; font-size:11px; font-weight:800; color:var(--green); text-transform:uppercase; letter-spacing:.4px; margin:12px 0 5px}
-  input[type=text],input[type=number],select,textarea{width:100%; font-family:var(--sans); font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink)}
+  input[type=text],input[type=number],input[type=password],input[type=email],input[type=search],select,textarea{width:100%; font-family:var(--sans); font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink)}
   .typesel{display:flex; gap:6px; flex-wrap:wrap; margin-top:4px}
   .typesel button{flex:1; min-width:120px; border:1px solid var(--line); background:#fff; color:var(--green-soft); border-radius:10px; padding:9px; font-size:13px; font-weight:700}
   .typesel button.on{background:var(--forest); color:#F4ECE2; border-color:var(--forest)}
@@ -285,7 +285,9 @@
   :root{color-scheme:light}
   ::selection{background:var(--forest);color:var(--cream)}
   button,.chip,.stab,.tab,.iconbtn,.advbtn,.dbtn,.ctlink,.lockbtn,.sheet-back,.beyond,.bn,input,select,textarea{transition:background-color .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .1s ease,opacity .16s ease}
-  :where(button,a,input,select,textarea,[contenteditable]):focus-visible{outline:2.5px solid var(--clay);outline-offset:2px}
+  :where(button,a):focus-visible{outline:2.5px solid var(--clay);outline-offset:2px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(44,74,56,.10)}
+  .signout{border:1px solid var(--line);background:#fff;color:var(--green);border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap}
   .btn:active,.advbtn:active,.iconbtn:active,.chip:active,.stab:active{transform:translateY(1px)}
   @media(hover:hover){
     .btn:hover{filter:brightness(1.08);box-shadow:0 3px 12px rgba(35,55,43,.22)}
@@ -293,7 +295,7 @@
     .tab:hover:not(.active){color:var(--green);background:rgba(255,255,255,.55)}
     .iconbtn:hover{border-color:var(--green-soft);color:var(--green)}
     .iconbtn.danger:hover{border-color:var(--urgent)}
-    .chip:hover:not(.on),.stab:hover:not(.on),.ctlink:hover,.lockbtn:hover{border-color:var(--green-soft)}
+    .chip:hover:not(.on),.stab:hover:not(.on),.ctlink:hover,.lockbtn:hover,.signout:hover{border-color:var(--green-soft)}
     .advbtn:hover{background:#164A38}
     .dbtn:hover:not(.on){color:var(--green)}
     .beyond:hover{background:var(--cream-2)}
