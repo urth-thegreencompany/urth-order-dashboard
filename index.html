@@ -29,7 +29,6 @@
   button{font-family:var(--sans); cursor:pointer}
   .wrap{max-width:1120px; margin:0 auto; padding:0 16px 110px}
 
-  .strip{background:var(--forest); color:#F4ECE2; text-align:center; font-size:13px; padding:8px 12px}
   header.top{background:var(--cream); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:40}
   .top-inner{max-width:1120px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
   .brand{display:flex; align-items:baseline; gap:10px}
@@ -93,7 +92,6 @@
   .addr.show{display:block}
   .card-actions{display:flex; align-items:center; gap:7px; margin-top:11px; flex-wrap:wrap}
   select.mini{font-family:var(--sans); font-size:12.5px; font-weight:700; border:1px solid var(--line); border-radius:9px; padding:6px 8px; background:#fff; color:var(--green)}
-  select.status-sel{font-weight:800}
   .iconbtn{border:1px solid var(--line); background:#fff; border-radius:9px; padding:6px 9px; font-size:12.5px; font-weight:700; color:var(--green-soft)}
   .iconbtn.on{background:var(--urgent); color:#fff; border-color:var(--urgent)}
   .maker-tag{font-size:12px}
@@ -178,6 +176,10 @@
   .statuspill{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.3px;white-space:nowrap}
   .badge.pola{background:#3C4A5E;color:#fff}
   .note-line{font-size:12.5px;color:var(--ink);margin-top:8px;background:#F3EAD9;border-left:3px solid var(--clay);border-radius:8px;padding:7px 10px}
+  .contact{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .ctlink{font-size:12px;font-weight:800;text-decoration:none;color:var(--green);border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 9px}
+  .ctlink.wa{color:#0B7A45;border-color:#BFE3CE;background:#EAF6EF}
+  .ctlink:active{background:var(--cream-2)}
   .remark-line{font-size:12px;color:var(--green-soft);margin-top:6px;font-style:italic}
   .card.confirmed{border-left-color:#7FA06B;background:linear-gradient(0deg,#E7EEDD,var(--cream-2) 62%)}
   .card.cancelled{border-left-color:#B0A99E;background:#ECE7DF;opacity:.72}
@@ -186,6 +188,55 @@
   .iconbtn.danger{color:var(--urgent);border-color:#E7CFC7}
   .iconbtn.danger.on{background:var(--urgent);color:#fff}
   .kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important}
+  /* --- upgrade additions --- */
+  #orderSearch{width:100%;font-family:var(--sans);font-size:14.5px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--cream-2);color:var(--ink)}
+  #orderSearch:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(44,74,56,.10)}
+  .homebar{margin:14px 0 2px}
+  .preset-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+  .chip{border:1.5px solid var(--line);background:#fff;color:var(--green);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .chip.on{background:var(--forest);color:#F4ECE2;border-color:var(--forest)}
+  .filterbar-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 2px}
+  .filterbar-row select.mini{padding:8px 10px}
+  .head-actions{display:flex;align-items:center;gap:10px}
+  .density-toggle{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .dbtn{border:none;background:#fff;color:var(--green-soft);padding:7px 11px;font-size:15px;line-height:1;cursor:pointer}
+  .dbtn.on{background:var(--forest);color:#F4ECE2}
+  .attention{width:100%;text-align:left;display:flex;align-items:center;gap:8px;background:#F6E1DA;border:1px solid #E3B7AC;color:var(--urgent);border-radius:14px;padding:12px 15px;font-size:14px;font-weight:700;margin:14px 0 0;cursor:pointer}
+  .attention span{font-weight:600;color:#9A4634;font-size:12.5px;margin-left:auto}
+  .attention.on{background:var(--urgent);color:#fff;border-color:var(--urgent)}
+  .attention.on span{color:#F6D9D0}
+  .results-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--cream-2);border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:12px;font-size:14px}
+  .beyond{display:block;width:100%;margin-top:14px;background:transparent;border:1px dashed var(--green-soft);color:var(--green);border-radius:12px;padding:11px;font-size:13.5px;font-weight:700;cursor:pointer}
+  .beyond:active{background:var(--cream-2)}
+  .stepper{display:flex;gap:4px;margin-top:11px}
+  .step{flex:1;min-width:0;border:none;background:transparent;padding:4px 0;cursor:pointer}
+  .step .sdot2{display:block;width:100%;height:6px;border-radius:999px;background:var(--line)}
+  .step.done .sdot2{background:var(--sc)}
+  .step.cur .sdot2{background:var(--sc);height:8px;box-shadow:0 0 0 3px color-mix(in srgb,var(--sc) 22%,transparent)}
+  .advbtn{background:var(--forest);color:#F4ECE2;border:none;border-radius:9px;padding:8px 13px;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:var(--shadow)}
+  .advbtn:active{opacity:.85}
+  .advbtn.sm{padding:6px 10px;font-size:12px}
+  .olist{display:flex;flex-direction:column;gap:7px}
+  .orow{display:flex;align-items:center;gap:10px;background:var(--cream-2);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:12px;padding:9px 12px}
+  .orow.urg{border-left-color:var(--urgent)}
+  .orow.cxl{opacity:.6}.orow.cxl .orow-cust{text-decoration:line-through}
+  .orow-main{min-width:0;flex:1}
+  .orow-cust{font-family:var(--serif);font-size:15px;color:var(--green);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .orow-sub{font-size:11.5px;color:var(--green-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .orow-val{font-family:var(--serif);font-size:14px;color:var(--green);flex:0 0 auto}
+  .orow .statuspill{flex:0 0 auto}
+  @media(max-width:560px){.orow-val{display:none}}
+  .botnav{display:none}
+  .fab{display:none}
+  @media(max-width:760px){
+    nav.tabs{display:none}
+    .sec-head #addBtn{display:none}
+    .botnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--cream-2);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+    .bn{flex:1;border:none;background:transparent;color:var(--green-soft);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:700;padding:5px 2px;cursor:pointer}
+    .bn .bi{font-size:19px;line-height:1}
+    .bn.active{color:var(--forest)}
+    .fab{display:flex;align-items:center;justify-content:center;position:fixed;right:16px;bottom:76px;z-index:55;width:56px;height:56px;border-radius:50%;background:var(--clay);color:#fff;border:none;font-size:30px;line-height:1;box-shadow:0 6px 20px rgba(35,55,43,.3);cursor:pointer}
+  }
   /* sticky back bar in sheets */
   .sheet-top{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;background:var(--cream);margin:-18px -18px 10px;padding:13px 18px;border-bottom:1px solid var(--line)}
   .sheet-back{border:1px solid var(--line);background:#fff;border-radius:11px;padding:8px 13px;font-size:14px;font-weight:800;color:var(--green);cursor:pointer;flex:0 0 auto}
@@ -227,7 +278,6 @@
     <button class="btn" id="liBtn">Sign in</button>
     <p class="note" id="liErr" style="color:var(--urgent);min-height:18px;margin-top:12px"></p>
   </div></div>
-  <div class="strip">✿ Talk to our Floral experts: +91 81974 97531 ✿</div>
 
   <header class="top">
     <div class="top-inner">
@@ -255,9 +305,17 @@
     </nav>
 
     <section id="view-home">
+      <div id="attention"></div>
+      <div class="homebar">
+        <input type="search" id="orderSearch" placeholder="Search all orders — name, #number, product, phone…" autocomplete="off" />
+        <div class="preset-row" id="presetRow"></div>
+      </div>
       <div class="kpis" id="kpis"></div>
       <div class="status-tabs" id="statusTabs"></div>
-      <div class="sec-head"><h2>Upcoming</h2><button class="btn" id="addBtn">+ Add order</button></div>
+      <div class="filterbar-row" id="filterBar"></div>
+      <div class="sec-head"><h2 id="homeHeading">Upcoming</h2>
+        <div class="head-actions"><div class="density-toggle" id="densityToggle"></div><button class="btn" id="addBtn">+ Add order</button></div>
+      </div>
       <div id="days"></div>
     </section>
 
@@ -302,6 +360,14 @@
     </section>
   </div>
 
+  <nav class="botnav" id="botnav">
+    <button class="bn active" data-view="home"><span class="bi">🏠</span><span>Home</span></button>
+    <button class="bn" data-view="calendar"><span class="bi">🗓️</span><span>Calendar</span></button>
+    <button class="bn" data-view="subs"><span class="bi">✿</span><span>Subs</span></button>
+    <button class="bn" data-view="products"><span class="bi">🏷️</span><span>Products</span></button>
+  </nav>
+  <button class="fab" id="fab" title="Add order" aria-label="Add order">+</button>
+
   <!-- ADD / EDIT ORDER -->
   <div class="scrim" id="scrim">
     <div class="sheet">
@@ -340,7 +406,10 @@
         <div><label>Order value (₹)</label><input type="number" id="fVal" placeholder="0" /></div>
         <div><label>Delivery time</label><select id="fTime"><option>Morning (8am–11am)</option><option>Mid-Morning (10am–1pm)</option><option selected>Afternoon (1pm–4pm)</option><option>Evening (6pm–9pm)</option></select></div>
       </div>
-      <label>Customer name</label><input type="text" id="fCust" placeholder="Full name" />
+      <div class="grid2">
+        <div><label>Customer name</label><input type="text" id="fCust" placeholder="Full name" /></div>
+        <div><label>Phone</label><input type="text" id="fPhone" placeholder="+91 81974 97531" inputmode="tel" /></div>
+      </div>
       <label>Order number</label><input type="text" id="fNo" />
       <div class="hint" id="fNoHint" style="margin-top:5px"></div>
       <div class="grid2">
@@ -392,6 +461,8 @@ const STATUS_META={
   cancelled:{label:'Cancelled',color:'#8A8178',bg:'#ECE7DF'},
 };
 const STAGES=Object.entries(STATUS_META).map(([k,m])=>[k,m.label]);
+const STAGE_FLOW=['new','confirmed','prep','ready','dispatched','delivered'];
+const nextStage=s=>{const i=STAGE_FLOW.indexOf(s);return i>=0&&i<STAGE_FLOW.length-1?STAGE_FLOW[i+1]:null;};
 const SLOT=['Morning','Mid-Morning','Afternoon','Evening'];
 const slotIdx=t=>{if(!t)return 90;const s=String(t).split(' ')[0];const i=SLOT.indexOf(s);return i<0?89:i;};
 
@@ -408,18 +479,22 @@ const parseD=s=>new Date(s+'T00:00:00');
 const todayISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 function fmtDayDate(s){if(!s)return '—';const d=parseD(s);return WEEK[d.getDay()]+', '+d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear();}
 const shortD=s=>{const d=parseD(s);return d.getDate()+' '+MON[d.getMonth()];};
-function addDays(s,n){const d=parseD(s);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function addDays(s,n){const p=s.split('-').map(Number);const d=new Date(Date.UTC(p[0],p[1]-1,p[2]));d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
 
 /* ===== live state ===== */
 let ORDERS=[], CATALOG=[], LOOSE=[], SUBS=[];
 let rangeFrom=todayISO(), rangeTo=addDays(todayISO(),3), statusFilter='all';
+let searchQuery='', makerFilter='', sourceFilter='', payFilter='', overdueMode=false;
+let density=localStorage.getItem('urth_density')||'cards';
 let NEXT_NO=2001, currentView='home', calUnlocked=false;
 let calY=new Date().getFullYear(), calM=new Date().getMonth();
 const recentLocal=new Set();
 
 /* ===== field mapping ===== */
-const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,pay:r.payment_status,addr:r.address,status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,remarks:r.remarks||''});
-const toDB=o=>({order_no:o.no,customer_name:o.cust,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:o.maker,payment_status:o.pay,address:o.addr,status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:!!o.polaroid,remarks:o.remarks||null});
+const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,phone:r.phone||'',od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,pay:r.payment_status,addr:r.address,status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,remarks:r.remarks||''});
+const toDB=o=>({order_no:o.no,customer_name:o.cust,phone:o.phone||null,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:o.maker,payment_status:o.pay,address:o.addr,status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:!!o.polaroid,remarks:o.remarks||null});
+const phoneDigits=p=>String(p||'').replace(/\D/g,'');
+const waNumber=p=>{let d=phoneDigits(p);if(!d)return '';if(d.length===10)d='91'+d;return d;};
 const byId=id=>ORDERS.find(o=>o.id===id);
 const rangeToSafe=()=> (rangeTo<rangeFrom?rangeFrom:rangeTo);
 
@@ -436,7 +511,7 @@ async function fetchAllOrders(){
 function recomputeRepeat(){
   ORDERS.sort((a,b)=>a.dd<b.dd?-1:a.dd>b.dd?1:(a.id-b.id));
   const seen=new Set();
-  ORDERS.forEach(o=>{const k=(o.cust||'').toLowerCase();o.repeat=k&&seen.has(k);if(k)seen.add(k);});
+  ORDERS.forEach(o=>{const k=phoneDigits(o.phone)||(o.cust||'').toLowerCase();o.repeat=k&&seen.has(k);if(k)seen.add(k);});
 }
 async function loadAll(){
   ORDERS=await fetchAllOrders(); recomputeRepeat();
@@ -449,13 +524,37 @@ async function loadAll(){
 }
 
 /* ===== helpers ===== */
+function passFilters(o){
+  if(statusFilter!=='all' && o.status!==statusFilter) return false;
+  if(makerFilter && o.maker!==makerFilter) return false;
+  if(sourceFilter && !(o.src||'').toLowerCase().includes(sourceFilter.toLowerCase())) return false;
+  if(payFilter && !(o.pay||'').toLowerCase().includes(payFilter.toLowerCase())) return false;
+  return true;
+}
+const sortOrders=list=>list.sort((a,b)=>{
+  const ca=a.status==='cancelled'?1:0, cb=b.status==='cancelled'?1:0;
+  return (ca-cb) || (slotIdx(a.time)-slotIdx(b.time)) || (b.urgent-a.urgent) || (a.id-b.id);
+});
 function ordersOn(date){
-  let list=ORDERS.filter(o=>o.dd===date);
-  if(statusFilter!=='all') list=list.filter(o=>o.status===statusFilter);
-  return list.sort((a,b)=>{
-    const ca=a.status==='cancelled'?1:0, cb=b.status==='cancelled'?1:0;
-    return (ca-cb) || (slotIdx(a.time)-slotIdx(b.time)) || (b.urgent-a.urgent) || (a.id-b.id);
-  });
+  return sortOrders(ORDERS.filter(o=>o.dd===date&&passFilters(o)));
+}
+function searchResults(){
+  const q=searchQuery.trim().toLowerCase(), qd=q.replace(/\D/g,'');
+  return sortOrders(ORDERS.filter(o=>passFilters(o) && (
+    (o.cust||'').toLowerCase().includes(q) ||
+    (o.no||'').toLowerCase().includes(q) ||
+    (o.det||'').toLowerCase().includes(q) ||
+    (qd && phoneDigits(o.phone).includes(qd))
+  )));
+}
+function overdueOrders(){
+  const t=todayISO();
+  return sortOrders(ORDERS.filter(o=>o.dd<t&&o.status!=='delivered'&&o.status!=='cancelled'&&passFilters(o)));
+}
+function beyondRangeCount(){const to=rangeToSafe();return ORDERS.filter(o=>o.dd>to&&o.status!=='cancelled').length;}
+function renderOrderList(list){
+  return density==='list' ? `<div class="olist">${list.map(orderRow).join('')}</div>`
+                          : `<div class="board">${list.map(orderCard).join('')}</div>`;
 }
 const productLine=o=>o.det||o.type||'Order';
 function typeLabel(o){const t=(o.type||'').toLowerCase();
@@ -501,7 +600,10 @@ function orderCard(o){
   const cls=['card',o.status,o.urgent?'urgent':''].join(' ');
   const flowers=(o.det&&o.det!==o.type)?'':((CATALOG.find(p=>p.name===o.det)||{}).flowers||'');
   const makerHtml=o.maker?`<span class="maker-tag">Maker: <b>${o.maker}</b></span>`:`<span class="maker-tag none">Maker: unassigned</span>`;
+  const waN=waNumber(o.phone);
+  const contactHtml=o.phone?`<span class="contact"><a class="ctlink" href="tel:${phoneDigits(o.phone)}">☎ ${o.phone}</a>${waN?`<a class="ctlink wa" href="https://wa.me/${waN}" target="_blank" rel="noopener">WhatsApp</a>`:''}</span>`:'';
   const cxl=o.status==='cancelled';
+  const nx=nextStage(o.status);
   return `<div class="${cls}" data-id="${o.id}">
     <div class="row1">
       <div><div class="cust">${o.cust||'—'}</div><div class="ono">${o.no||'#—'} · ${fmtDayDate(o.dd)}${o.time?' · '+o.time:''}</div></div>
@@ -516,14 +618,15 @@ function orderCard(o){
     <div class="meta">
       <span class="val-amt">${fmtINR(o.val)}</span>
       ${o.src?`<span class="pill">${o.src}</span>`:''}${o.trans?`<span>${o.trans}</span>`:''}
-      <span>${/pending/i.test(o.pay)?'⚠︎ <b>Pending</b>':(o.pay?('✓ '+o.pay):'')}</span>${makerHtml}
+      <span>${/pending/i.test(o.pay)?'⚠︎ <b>Pending</b>':(o.pay?('✓ '+o.pay):'')}</span>${makerHtml}${contactHtml}
     </div>
     ${flowers?`<div class="flowers">${flowers}</div>`:''}
     ${o.note?`<div class="note-line">✎ “${o.note}”</div>`:''}
     ${o.remarks?`<div class="remark-line">Remarks: ${o.remarks}</div>`:''}
-    <div class="addr" id="addr-${o.id}">📍 ${o.addr||'No address on file'}</div>
+    <div class="addr" id="addr-${o.id}">📍 ${o.addr||'No address on file'}${contactHtml?'<div style="margin-top:7px">'+contactHtml+'</div>':''}</div>
+    ${cxl?'':`<div class="stepper">${STAGE_FLOW.map((s,i)=>{const sm=STATUS_META[s];const st=i<STAGE_FLOW.indexOf(o.status)?'done':(s===o.status?'cur':'');return `<button class="step ${st}" data-step="${o.id}" data-s="${s}" style="--sc:${sm.color}" title="${sm.label}"><span class="sdot2"></span></button>`;}).join('')}</div>`}
     <div class="card-actions">
-      <select class="mini status-sel" data-status="${o.id}">${STAGES.map(s=>`<option value="${s[0]}" ${o.status===s[0]?'selected':''}>${s[1]}</option>`).join('')}</select>
+      ${nx&&!cxl?`<button class="advbtn" data-adv="${o.id}" data-next="${nx}">Mark ${STATUS_META[nx].label} →</button>`:''}
       <select class="mini" data-maker="${o.id}"><option value="">Assign maker</option>${MAKERS.map(mk=>`<option ${o.maker===mk?'selected':''}>${mk}</option>`).join('')}</select>
       <button class="iconbtn ${o.urgent?'on':''}" data-urg="${o.id}" title="Urgent">⚡</button>
       <button class="iconbtn" data-addr="${o.id}">📍</button>
@@ -533,25 +636,97 @@ function orderCard(o){
     </div>
   </div>`;
 }
+function orderRow(o){
+  const m=STATUS_META[o.status]||STATUS_META.new;
+  const nx=nextStage(o.status), cxl=o.status==='cancelled';
+  return `<div class="orow ${o.urgent&&!cxl?'urg':''} ${cxl?'cxl':''}" data-id="${o.id}">
+    <div class="orow-main">
+      <div class="orow-cust">${o.urgent&&!cxl?'⚡ ':''}${o.cust||'—'}${o.polaroid?' 📷':''}</div>
+      <div class="orow-sub">${o.no||'#—'} · ${o.time?o.time.split(' ')[0]:'—'} · ${productLine(o)}</div>
+    </div>
+    <span class="orow-val">${fmtINR(o.val)}</span>
+    <span class="statuspill" style="background:${m.bg};color:${m.color}">${m.label}</span>
+    ${nx&&!cxl?`<button class="advbtn sm" data-adv="${o.id}" data-next="${nx}">${STATUS_META[nx].label} →</button>`:''}
+    <button class="iconbtn" data-edit="${o.id}">Edit</button>
+  </div>`;
+}
 function dayHtml(date){
   const list=ordersOn(date), dayName=WEEK[parseD(date).getDay()];
-  const subs=(statusFilter==='all')?subsForDay(dayName):[];
+  const noFilters=statusFilter==='all'&&!makerFilter&&!sourceFilter&&!payFilter;
+  const subs=noFilters?subsForDay(dayName):[];
   if(!list.length&&!subs.length) return '';
   const active=list.filter(o=>o.status!=='cancelled').length;
   let html=`<div class="day-sec"><div class="day-head"><h2>${fmtDayDate(date)}</h2><span class="cnt">${active} order${active!==1?'s':''}</span></div>`;
   if(subs.length) html+=`<div class="sub-day"><h3>✿ Subscriptions — ${dayName}</h3><ul>${subs.map(s=>`<li><span><b>${s.client}</b> · ${s.type}</span><span>${fmtINR(s.val)} · ${s.prefs}</span></li>`).join('')}</ul></div>`;
-  if(list.length) html+=`<div class="board">${list.map(orderCard).join('')}</div>`;
+  if(list.length) html+=renderOrderList(list);
   return html+`</div>`;
 }
+function renderAttention(){
+  const host=document.getElementById('attention'); if(!host)return;
+  const od=overdueOrders();
+  if(!od.length){host.innerHTML='';return;}
+  host.innerHTML=`<button class="attention ${overdueMode?'on':''}" id="attnBtn">⚠︎ <b>${od.length}</b> order${od.length!==1?'s':''} overdue &amp; unresolved<span>${overdueMode?'showing · tap to exit':'tap to review'}</span></button>`;
+  document.getElementById('attnBtn').onclick=()=>{overdueMode=!overdueMode;if(overdueMode)clearSearchState();renderHome();};
+}
+function renderFilters(){
+  const host=document.getElementById('filterBar'); if(!host)return;
+  const mk=['',...MAKERS], src=['',...SOURCES], payOpts=['','Paid','Pending','Cash','Card','Razorpay','No Bill'];
+  const active=(makerFilter?1:0)+(sourceFilter?1:0)+(payFilter?1:0);
+  host.innerHTML=`
+    <select class="mini" id="fltMaker">${mk.map(x=>`<option value="${x}" ${makerFilter===x?'selected':''}>${x||'Any maker'}</option>`).join('')}</select>
+    <select class="mini" id="fltSrc">${src.map(x=>`<option value="${x}" ${sourceFilter===x?'selected':''}>${x||'Any source'}</option>`).join('')}</select>
+    <select class="mini" id="fltPay">${payOpts.map(x=>`<option value="${x}" ${payFilter===x?'selected':''}>${x||'Any payment'}</option>`).join('')}</select>
+    ${active?`<button class="btn ghost sm" id="fltClear">Clear filters (${active})</button>`:''}`;
+  document.getElementById('fltMaker').onchange=e=>{makerFilter=e.target.value;renderHome();};
+  document.getElementById('fltSrc').onchange=e=>{sourceFilter=e.target.value;renderHome();};
+  document.getElementById('fltPay').onchange=e=>{payFilter=e.target.value;renderHome();};
+  if(active)document.getElementById('fltClear').onclick=()=>{makerFilter=sourceFilter=payFilter='';renderHome();};
+}
+const PRESETS=[['Today',0],['Next 3 days',2],['This week',6],['This month',29]];
+function renderPresets(){
+  const host=document.getElementById('presetRow'); if(!host)return;
+  const t=todayISO();
+  host.innerHTML=PRESETS.map(([lab,n],i)=>{
+    const on=(!searchQuery&&!overdueMode&&rangeFrom===t&&rangeToSafe()===addDays(t,n));
+    return `<button class="chip ${on?'on':''}" data-preset="${n}">${lab}</button>`;
+  }).join('');
+  host.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{clearSearchState();setRange(t,addDays(t,+b.dataset.preset));});
+}
+function renderDensityToggle(){
+  const host=document.getElementById('densityToggle'); if(!host)return;
+  host.innerHTML=`<button class="dbtn ${density==='cards'?'on':''}" data-d="cards" title="Card view">▦</button><button class="dbtn ${density==='list'?'on':''}" data-d="list" title="List view">☰</button>`;
+  host.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{density=b.dataset.d;localStorage.setItem('urth_density',density);renderHome();});
+}
+function clearSearchState(){searchQuery='';const el=document.getElementById('orderSearch');if(el)el.value='';}
+function clearSearch(){clearSearchState();renderHome();}
 function renderHome(){
-  renderKPIs(); renderStatusTabs();
-  const host=document.getElementById('days');
-  const out=daysInRange().map(dayHtml).join('');
-  host.innerHTML=out||`<div class="empty">No orders match this filter in the selected range.</div>`;
+  renderAttention(); renderKPIs(); renderStatusTabs(); renderFilters(); renderPresets(); renderDensityToggle();
+  const host=document.getElementById('days'), heading=document.getElementById('homeHeading');
+  if(searchQuery.trim()){
+    if(heading)heading.textContent='Search results';
+    const res=searchResults();
+    host.innerHTML=`<div class="results-head"><span><b>${res.length}</b> result${res.length!==1?'s':''} for “${searchQuery.trim()}”</span><button class="btn ghost sm" id="clearSearch">Clear search</button></div>`
+      +(res.length?renderOrderList(res):`<div class="empty">No orders match “${searchQuery.trim()}”.</div>`);
+  } else if(overdueMode){
+    if(heading)heading.textContent='Overdue';
+    const res=overdueOrders();
+    host.innerHTML=`<div class="results-head"><span><b>${res.length}</b> overdue — past delivery date, not delivered</span><button class="btn ghost sm" id="exitOverdue">Back to board</button></div>`
+      +(res.length?renderOrderList(res):`<div class="empty">Nothing overdue right now.</div>`);
+  } else {
+    if(heading)heading.textContent='Upcoming';
+    let out=daysInRange().map(dayHtml).join('');
+    const bc=beyondRangeCount();
+    if(bc)out+=`<button class="beyond" id="beyondBtn">+${bc} more scheduled beyond this range →</button>`;
+    host.innerHTML=out||`<div class="empty">No orders match this filter in the selected range.</div>`;
+  }
   bindCards();
+  const cs=document.getElementById('clearSearch'); if(cs)cs.onclick=clearSearch;
+  const eo=document.getElementById('exitOverdue'); if(eo)eo.onclick=()=>{overdueMode=false;renderHome();};
+  const bb=document.getElementById('beyondBtn'); if(bb)bb.onclick=()=>{const to=rangeToSafe();const mx=ORDERS.filter(o=>o.dd>to&&o.status!=='cancelled').reduce((a,o)=>o.dd>a?o.dd:a,to);setRange(rangeFrom,mx);};
 }
 function bindCards(){
-  document.querySelectorAll('[data-status]').forEach(s=>s.onchange=()=>changeStatus(+s.dataset.status,s.value));
+  document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.step,b.dataset.s));
+  document.querySelectorAll('[data-adv]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.adv,b.dataset.next));
   document.querySelectorAll('[data-maker]').forEach(s=>s.onchange=()=>{const o=byId(+s.dataset.maker);o.maker=s.value;renderCurrent();pushUpdate(o.id,{maker:s.value});if(s.value)toast(`Assigned <b>${s.value}</b> to ${o.cust} · ${o.no}.`);});
   document.querySelectorAll('[data-urg]').forEach(b=>b.onclick=()=>{const o=byId(+b.dataset.urg);o.urgent=!o.urgent;renderCurrent();pushUpdate(o.id,{urgent:o.urgent});});
   document.querySelectorAll('[data-addr]').forEach(b=>b.onclick=()=>document.getElementById('addr-'+b.dataset.addr).classList.toggle('show'));
@@ -688,7 +863,7 @@ document.getElementById('fSrc').onchange=toggleNoField;
 function openAdd(){
   editId=null;document.getElementById('formTitle').textContent='Add order';document.getElementById('formOno').textContent='';
   setFormType('catalogue');looseChosen=[];document.getElementById('looseChosen').textContent='';
-  ['prodSearch','fVal','fCust','fAddr','cPalette','cFlowers','vFlowers','vVase','fNote','fRemarks'].forEach(id=>document.getElementById(id).value='');
+  ['prodSearch','fVal','fCust','fPhone','fAddr','cPalette','cFlowers','vFlowers','vVase','fNote','fRemarks'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('autofill').textContent='';document.getElementById('fPolaroid').checked=false;
   fillSelect('fSrc',SOURCES,'Whatsapp');fillSelect('fTrans',TRANSPORT,'2 Wheeler');fillSelect('fPay',PAYMENTS,'Paid');
   document.getElementById('fMaker').innerHTML='<option value="">Unassigned</option>'+MAKERS.map(m=>`<option>${m}</option>`).join('');
@@ -701,7 +876,7 @@ function openEdit(id){
   document.getElementById('formTitle').textContent='Edit order';document.getElementById('formOno').textContent='Order '+o.no;
   setFormType('catalogue');document.getElementById('prodSearch').value=o.det||o.type||'';document.getElementById('autofill').textContent='';
   const fNo=document.getElementById('fNo');fNo.readOnly=false;fNo.value=o.no||'';document.getElementById('fNoHint').textContent='';
-  document.getElementById('fVal').value=o.val||'';document.getElementById('fCust').value=o.cust||'';
+  document.getElementById('fVal').value=o.val||'';document.getElementById('fCust').value=o.cust||'';document.getElementById('fPhone').value=o.phone||'';
   document.getElementById('fOd').value=o.od||rangeFrom;document.getElementById('fDd').value=o.dd||rangeFrom;
   fillSelect('fSrc',SOURCES,SOURCES.find(s=>o.src&&o.src.includes(s))||'Whatsapp');
   fillSelect('fTrans',TRANSPORT,TRANSPORT.find(s=>o.trans&&o.trans.includes(s))||'2 Wheeler');
@@ -733,7 +908,7 @@ document.getElementById('saveAdd').onclick=async()=>{
   else if(formType==='vase'){det='Vase — '+document.getElementById('vFlowers').value+(document.getElementById('vVase').value?(' in '+document.getElementById('vVase').value):'');type='Vase Arrangement';}
   else if(formType==='loose'){det='Loose — '+(looseChosen.join(', ')||document.getElementById('looseSearch').value);type='Loose Flowers';}
   if(!cust||(formType==='catalogue'&&!product))return toast('Add a customer name and a product.');
-  const common={cust,det,type,val:Number(document.getElementById('fVal').value)||0,time:document.getElementById('fTime').value,
+  const common={cust,phone:document.getElementById('fPhone').value.trim(),det,type,val:Number(document.getElementById('fVal').value)||0,time:document.getElementById('fTime').value,
     od:document.getElementById('fOd').value,dd:document.getElementById('fDd').value,src:document.getElementById('fSrc').value,
     trans:document.getElementById('fTrans').value,pay:document.getElementById('fPay').value,maker:document.getElementById('fMaker').value,
     addr:document.getElementById('fAddr').value.trim(),note:document.getElementById('fNote').value.trim(),
@@ -770,9 +945,11 @@ function startRealtime(){
 
 /* ===== toast / tabs / range ===== */
 function toast(html){const w=document.getElementById('toasts');const el=document.createElement('div');el.className='toast';el.innerHTML=`<span class="dot"></span><div>${html}</div>`;w.appendChild(el);setTimeout(()=>{el.style.transition='opacity .4s';el.style.opacity='0';setTimeout(()=>el.remove(),400);},4200);}
-function switchView(v){currentView=v;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.view===v));['home','calendar','subs','products'].forEach(x=>document.getElementById('view-'+x).style.display=x===v?'':'none');if(v==='home')renderHome();if(v==='calendar')showCalendar();if(v==='subs')renderSubs();if(v==='products')renderProds();}
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
+function switchView(v){currentView=v;document.querySelectorAll('.tab,.bn').forEach(x=>x.classList.toggle('active',x.dataset.view===v));['home','calendar','subs','products'].forEach(x=>document.getElementById('view-'+x).style.display=x===v?'':'none');if(v==='home')renderHome();if(v==='calendar')showCalendar();if(v==='subs')renderSubs();if(v==='products')renderProds();}
+document.querySelectorAll('.tab,.bn').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
 document.getElementById('addBtn').onclick=openAdd;document.getElementById('cancelAdd').onclick=closeForm;
+document.getElementById('fab').onclick=openAdd;
+document.getElementById('orderSearch').oninput=e=>{searchQuery=e.target.value;if(searchQuery.trim())overdueMode=false;renderHome();};
 scrim.onclick=e=>{if(e.target===scrim)closeForm();};
 /* mobile back handling for sheets */
 function openSheet(id){document.getElementById(id).classList.add('show');history.pushState({sheet:id},'');}

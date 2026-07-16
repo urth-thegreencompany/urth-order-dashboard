@@ -37,6 +37,7 @@ subscriptions (
 
 orders (
   id bigint identity pk, order_no text, customer_name text,
+  phone text,              -- customer phone; powers tap-to-call/WhatsApp + repeat detection
   order_date date, delivery_date date not null,
   order_type text, details text, value_inr integer default 0,
   delivery_time text, source text, transport_mode text, maker text,
@@ -53,9 +54,13 @@ RLS: enabled on all three tables, policy = any `authenticated` user can read/wri
 - **Order numbers**: WhatsApp and Walk-in orders auto-assign the next sequential number
   (`#2001`, `#2002`, ...). **Website orders already have a Shopify-side order number** —
   that number is entered manually and preserved as-is, never overwritten.
-- **New vs Repeat customer**: derived client-side by matching `customer_name` (case-insensitive)
-  against earlier orders — not a stored column. Ideally should key on phone number instead
-  of name once that's a captured field (currently isn't).
+- **New vs Repeat customer**: derived client-side, not a stored column. Keys on the customer's
+  `phone` (digits only) when present, falling back to `customer_name` (case-insensitive) for older
+  rows with no phone. Cards on the board show the phone with tap-to-call (`tel:`) and WhatsApp
+  (`wa.me`) links; a bare 10-digit number is assumed +91.
+- **Dates**: `addDays` builds dates via `Date.UTC` (not local time) so the range board works
+  correctly in IST (+5:30). A prior local-time implementation collapsed every day in a range to
+  "today" — don't reintroduce `new Date(s+'T00:00:00')` round-tripped through `toISOString()`.
 - **Delivery time** is a free-text slot: "Morning (8am–11am)", "Mid-Morning (10am–1pm)",
   "Afternoon (1pm–4pm)", "Evening (6pm–9pm)". Cards sort by this slot within a day so the
   team can see what needs to go out first.
@@ -83,6 +88,20 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
   marking Dispatched fires a toast notification (via Supabase Realtime on the `orders` table)
   so any other open dashboard sees it live. This replaces the old manual WhatsApp handoff.
 - Subscriptions auto-surface as a card on whichever day matches their `preferred_day`.
+- Home board (upgrade) surfaces work that used to be invisible:
+  - **Global search** across *all* orders (name / #number / product / phone), ignoring the date
+    range — for finding a specific order among thousands.
+  - **Overdue banner**: a red strip counting orders past their delivery date that aren't
+    delivered/cancelled; tap to review just those.
+  - **Range presets** (Today · Next 3 days · This week · This month) and a **"+N more scheduled
+    beyond this range →"** footer so future-dated orders aren't hidden by the default today→+3 window.
+  - **Filters** (maker / source / payment) narrow the board; KPIs stay range-scoped so totals hold.
+  - **Quick advance**: each card/row has a "Mark <next stage> →" button; the in-card **status
+    stepper** (segmented bar over new→…→delivered) is tappable to jump stages. Status is advanced
+    via `changeStatus`, which persists + toasts + is realtime-safe.
+  - **Density toggle** (cards vs compact list), persisted in `localStorage` under `urth_density`.
+- Mobile: a fixed **bottom nav** (Home/Calendar/Subs/Products) plus a floating **+ FAB** replace the
+  top tabs and header "Add order" button on ≤760px screens (mobile is the primary surface).
 - Calendar tab is passcode-gated client-side (not real auth) — passcode is `urth@001122`.
   This is a soft privacy gate, not security; real access control is Supabase Auth (login screen).
 - Design language matches the official Urth brand book (`Branding/Urth Brand book_Final.pdf`,
