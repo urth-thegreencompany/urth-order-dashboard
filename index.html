@@ -889,16 +889,17 @@ function openEdit(id){
   openSheet('scrim');
 }
 function closeForm(){closeSheet('scrim');}
-function wireCombo(inputId,listId,items,onPick){
+function wireCombo(inputId,listId,itemsRef,onPick){
   const inp=document.getElementById(inputId),list=document.getElementById(listId);
-  inp.oninput=()=>{const q=inp.value.toLowerCase();const m=items.filter(x=>x.name.toLowerCase().includes(q)).slice(0,40);
+  const getItems=()=>(typeof itemsRef==='function'?itemsRef():itemsRef)||[];
+  inp.oninput=()=>{const items=getItems();const q=inp.value.toLowerCase();const m=items.filter(x=>x.name.toLowerCase().includes(q)).slice(0,40);
     list.innerHTML=m.map(x=>`<div data-v="${x.name}">${x.name}<span>${x.price?fmtINR(x.price):''}</span></div>`).join('')||'<div style="color:var(--green-soft)">No match — logged as typed.</div>';
-    list.classList.add('show');list.querySelectorAll('[data-v]').forEach(d=>d.onclick=()=>{onPick(items.find(y=>y.name===d.dataset.v));list.classList.remove('show');});};
+    list.classList.add('show');list.querySelectorAll('[data-v]').forEach(d=>d.onclick=()=>{onPick(getItems().find(y=>y.name===d.dataset.v));list.classList.remove('show');});};
   inp.onblur=()=>setTimeout(()=>list.classList.remove('show'),150);
 }
-wireCombo('prodSearch','prodList',CATALOG,p=>{document.getElementById('prodSearch').value=p.name;document.getElementById('fVal').value=p.price||'';document.getElementById('autofill').textContent=p.flowers?'✿ '+p.flowers:'';});
+wireCombo('prodSearch','prodList',()=>CATALOG,p=>{document.getElementById('prodSearch').value=p.name;document.getElementById('fVal').value=p.price||'';document.getElementById('autofill').textContent=p.flowers?'✿ '+p.flowers:'';});
 wireCombo('vVase','vaseList',VASES,v=>{document.getElementById('vVase').value=v.name;});
-wireCombo('looseSearch','looseList',LOOSE,l=>{looseChosen.push(l.name);document.getElementById('looseChosen').textContent='✿ '+looseChosen.join(', ');document.getElementById('looseSearch').value='';});
+wireCombo('looseSearch','looseList',()=>LOOSE,l=>{looseChosen.push(l.name);document.getElementById('looseChosen').textContent='✿ '+looseChosen.join(', ');document.getElementById('looseSearch').value='';});
 
 document.getElementById('saveAdd').onclick=async()=>{
   const cust=document.getElementById('fCust').value.trim();
