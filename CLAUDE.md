@@ -80,6 +80,9 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
 - Owner/maker name spelling drift (e.g. "Michael" / "Micheal")
 - Payment status column historically mixed status (Paid/Pending) with method (Cash/Card/Razorpay)
 - ~700 historical orders have no `value_inr` recorded (shows as 0, understates revenue)
+- **Two order-numbering schemes** coexist: a shop sequence (`#2001`+, currently ~#2041) and a
+  6-digit scheme (`#118xxx`) used on many recent WhatsApp/Walk-in rows. Per the owner, new
+  auto-assigned numbers stay in the tidy `#2xxx` sequence, so `NEXT_NO` ignores any number ≥100000.
 
 ## Feature history / product decisions (why things are the way they are)
 - Ops lead's top priority on open: "how many orders today, what are they" — hence Home tab
@@ -104,6 +107,17 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
   top tabs and header "Add order" button on ≤760px screens (mobile is the primary surface).
 - Calendar tab is passcode-gated client-side (not real auth) — passcode is `urth@001122`.
   This is a soft privacy gate, not security; real access control is Supabase Auth (login screen).
+- **Edit gate**: everyone who logs in can *view*, but all mutations (add/edit/status/maker/urgent/
+  reschedule/cancel, and the editable Products/Subscriptions tables) are gated behind the same
+  passcode (`EDIT_PASS`, currently `urth@001122`). Toggle via the header "🔒 View only / 🔓 Editing
+  on" button; unlock persists for the tab session (`sessionStorage['urth_edit']`). When locked, edit
+  controls are hidden (CSS `body.locked`) and guarded in JS (`requireEdit()` / `editUnlocked`); the
+  📍 address button stays visible for logistics. Soft gate, not security — RLS still governs the DB.
+- **Overdue banner** only looks back `OVERDUE_WINDOW_DAYS` (14) so stale historical rows stuck at a
+  non-delivered status don't flood it. **Search results** are capped at 100 rendered cards.
+- **Logo**: brand text was replaced with the real logo (`assets/logo-wordmark.png` in the header,
+  `assets/logo-primary.png` on login). Assets live in tracked `assets/` because `Branding/` is
+  gitignored (won't deploy). Regenerate from `Branding/Logo/...` via Pillow trim+resize if needed.
 - Design language matches the official Urth brand book (`Branding/Urth Brand book_Final.pdf`,
   not tracked in git — local reference only): Ivory background (#F4ECE2), Forest green header
   (#0F3C2D), Grass green accent (#687259), Soil brown/clay accent (#7C4E2E), serif "Domaine

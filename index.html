@@ -31,11 +31,9 @@
 
   header.top{background:var(--cream); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:40}
   .top-inner{max-width:1120px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
-  .brand{display:flex; align-items:baseline; gap:10px}
-  .brand .mark{font-family:var(--serif); font-size:28px; font-weight:600; color:var(--green); line-height:1}
-  .brand .mark b{color:var(--clay)}
-  .brand .sub{font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--green-soft)}
-  .brand .role{font-family:var(--serif); color:var(--green); font-size:14px; margin-top:2px}
+  .brand{display:flex; align-items:center; gap:12px}
+  .brand-logo{height:34px; width:auto; display:block}
+  .brand .role{font-family:var(--serif); color:var(--green-soft); font-size:14px; padding-left:12px; border-left:1px solid var(--line)}
   .proto-tag{display:inline-block; font-size:10px; font-weight:800; letter-spacing:.5px; color:var(--clay); background:#F0E2D6; padding:2px 8px; border-radius:999px; text-transform:uppercase; vertical-align:middle}
   .datebar{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
   .today-chip{font-size:13px; color:var(--green); font-weight:700}
@@ -129,7 +127,7 @@
 
   .scrim{position:fixed; inset:0; background:rgba(35,55,43,.45); display:none; align-items:flex-end; justify-content:center; z-index:60}
   .scrim.show{display:flex}
-  .sheet{background:var(--cream); width:100%; max-width:540px; border-radius:20px 20px 0 0; padding:18px 18px 26px; max-height:94vh; overflow:auto}
+  .sheet{background:var(--cream); width:100%; max-width:540px; border-radius:20px 20px 0 0; padding:0 18px 26px; max-height:94vh; overflow:auto}
   @media(min-width:560px){ .scrim{align-items:center} .sheet{border-radius:20px} }
   .sheet h2{font-size:22px; margin-bottom:2px}
   .sheet .hint{font-size:12.5px; color:var(--green-soft); margin-bottom:12px}
@@ -226,6 +224,13 @@
   .orow-val{font-family:var(--serif);font-size:14px;color:var(--green);flex:0 0 auto}
   .orow .statuspill{flex:0 0 auto}
   @media(max-width:560px){.orow-val{display:none}}
+  .lockbtn{border:1px solid var(--line);background:#fff;color:var(--clay);border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+  .lockbtn.on{background:#E7EFE7;color:var(--leaf);border-color:#BFD8BF}
+  body.locked #addBtn, body.locked .fab, body.locked #addSub, body.locked #addProd, body.locked #uploadCsv,
+  body.locked .stepper, body.locked .advbtn,
+  body.locked [data-maker], body.locked [data-urg], body.locked [data-resc],
+  body.locked [data-cxl], body.locked [data-restore], body.locked [data-edit], body.locked [data-adv]{display:none!important}
+  body.locked .card-actions:empty{display:none}
   .botnav{display:none}
   .fab{display:none}
   @media(max-width:760px){
@@ -238,15 +243,14 @@
     .fab{display:flex;align-items:center;justify-content:center;position:fixed;right:16px;bottom:76px;z-index:55;width:56px;height:56px;border-radius:50%;background:var(--clay);color:#fff;border:none;font-size:30px;line-height:1;box-shadow:0 6px 20px rgba(35,55,43,.3);cursor:pointer}
   }
   /* sticky back bar in sheets */
-  .sheet-top{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;background:var(--cream);margin:-18px -18px 10px;padding:13px 18px;border-bottom:1px solid var(--line)}
+  .sheet-top{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;background:var(--cream);margin:0 -18px 12px;padding:15px 18px;border-bottom:1px solid var(--line)}
   .sheet-back{border:1px solid var(--line);background:#fff;border-radius:11px;padding:8px 13px;font-size:14px;font-weight:800;color:var(--green);cursor:pointer;flex:0 0 auto}
   .sheet-back:active{background:var(--cream-2)}
   .sheet-top h2{font-size:19px;margin:0}
   /* login polish */
   #login{position:fixed;inset:0;background:radial-gradient(120% 90% at 50% 0%,#FBF6EF 0%,var(--cream) 60%);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
   #login .box{background:var(--cream-2);border:1px solid var(--line);border-radius:24px;box-shadow:0 10px 40px rgba(35,55,43,.12);padding:38px 30px;max-width:390px;width:100%;text-align:center}
-  #login .mark{font-family:var(--serif);font-size:46px;color:var(--green);line-height:1}
-  #login .mark b{color:var(--clay)}
+  #login .login-logo{width:190px;max-width:66%;height:auto;display:block;margin:0 auto 4px}
   #login h2{font-size:23px;margin-top:14px}
   #login .lsub{letter-spacing:2px;text-transform:uppercase;color:var(--green-soft);font-size:11px;margin:6px 0 24px}
   #login input{width:100%;padding:14px 16px;font-size:15px;border:1.5px solid var(--line);border-radius:13px;background:#fff;margin-bottom:11px;transition:border-color .15s,box-shadow .15s}
@@ -254,15 +258,19 @@
   #login .btn{width:100%;padding:14px;font-size:15px;border-radius:13px;margin-top:5px}
   @media(max-width:560px){
     .top-inner{padding:11px 14px;gap:8px}
-    .brand .mark{font-size:24px}
+    .brand-logo{height:28px}
+    .brand .role{display:none}
     .datebar{width:100%;justify-content:space-between;gap:8px}
+    .datebar .rng{flex:1 1 42%}
+    .datebar .rng input{width:100%}
+    .lockbtn,.signout{flex:0 0 auto}
     .rng{gap:4px}.rng span{font-size:11px}
     .grid2{grid-template-columns:1fr}
     .card-actions{gap:6px}
     .card-actions .iconbtn,.card-actions select.mini{padding:9px 11px;font-size:13px}
     .day-head h2{font-size:17px}
-    .sheet{padding:16px 15px 26px}
-    .sheet-top{margin:-16px -15px 10px;padding:12px 15px}
+    .sheet{padding:0 15px 26px}
+    .sheet-top{margin:0 -15px 10px;padding:13px 15px}
     .typesel button{min-width:calc(50% - 3px)}
   }
 </style>
@@ -270,7 +278,7 @@
 </head>
 <body>
   <div id="login"><div class="box">
-    <div class="mark">urth<b>.</b></div>
+    <img class="login-logo" src="assets/logo-primary.png" alt="urth. — The Green Company" />
     <h2>Welcome back</h2>
     <div class="lsub">Order Dashboard</div>
     <input type="email" id="liEmail" placeholder="Email" autocomplete="username" />
@@ -282,15 +290,13 @@
   <header class="top">
     <div class="top-inner">
       <div class="brand">
-        <div class="mark">urth<b>.</b></div>
-        <div>
-          <div class="sub">The Green Company</div>
-          <div class="role">Order Dashboard</div>
-        </div>
+        <img class="brand-logo" src="assets/logo-wordmark.png" alt="urth. — The Green Company" />
+        <span class="role">Order Dashboard</span>
       </div>
       <div class="datebar">
         <div class="rng"><span>From</span><input type="date" id="dateFrom" /></div>
         <div class="rng"><span>To</span><input type="date" id="dateTo" /></div>
+        <button class="lockbtn" id="editLock" title="Editing is passcode-protected">🔒 View only</button>
         <button class="signout" id="signout">Sign out</button>
       </div>
     </div>
@@ -442,6 +448,15 @@
     <div class="modal-actions"><button class="btn ghost" id="reCancel">Back</button><button class="btn" id="reSave">Move order</button></div>
   </div></div>
 
+  <div class="scrim" id="editGate"><div class="sheet" style="max-width:380px">
+    <div class="sheet-top"><button class="sheet-back" data-close="editGate">‹ Back</button><h2>Unlock editing</h2></div>
+    <p class="hint">Viewing is open to everyone. Enter the team passcode to add or change orders.</p>
+    <label>Passcode</label>
+    <input type="password" id="editPass" placeholder="Team passcode" autocomplete="off" />
+    <p class="note" id="editErr" style="color:var(--urgent);min-height:16px;margin-top:8px"></p>
+    <div class="modal-actions"><button class="btn ghost" data-close="editGate">Cancel</button><button class="btn" id="editUnlockBtn">Unlock editing</button></div>
+  </div></div>
+
   <div class="toast-wrap" id="toasts"></div>
 
 <script>
@@ -486,6 +501,8 @@ let ORDERS=[], CATALOG=[], LOOSE=[], SUBS=[];
 let rangeFrom=todayISO(), rangeTo=addDays(todayISO(),3), statusFilter='all';
 let searchQuery='', makerFilter='', sourceFilter='', payFilter='', overdueMode=false;
 let density=localStorage.getItem('urth_density')||'cards';
+let editUnlocked=sessionStorage.getItem('urth_edit')==='1';
+const EDIT_PASS='urth@001122';
 let NEXT_NO=2001, currentView='home', calUnlocked=false;
 let calY=new Date().getFullYear(), calM=new Date().getMonth();
 const recentLocal=new Set();
@@ -515,7 +532,8 @@ function recomputeRepeat(){
 }
 async function loadAll(){
   ORDERS=await fetchAllOrders(); recomputeRepeat();
-  NEXT_NO=Math.max(2000,...ORDERS.map(o=>parseInt(String(o.no||'').replace(/\D/g,''))||0))+1;
+  /* shop walk-in/WhatsApp sequence is #2xxx; ignore 6-digit Shopify-style numbers so auto-assign stays in the tidy range */
+  NEXT_NO=Math.max(2000,...ORDERS.map(o=>{const n=parseInt(String(o.no||'').replace(/\D/g,''))||0;return n<100000?n:0;}))+1;
   const p=await db.from('products').select('*').order('name');
   CATALOG=(p.data||[]).map(x=>({id:x.id,name:x.name,type:x.type,price:x.price_inr||0,flowers:x.flowers||''}));
   LOOSE=CATALOG.filter(x=>x.type==='Loose Flower'||x.type==='Foliage').map(x=>({name:x.name,price:x.price}));
@@ -547,9 +565,10 @@ function searchResults(){
     (qd && phoneDigits(o.phone).includes(qd))
   )));
 }
+const OVERDUE_WINDOW_DAYS=14;
 function overdueOrders(){
-  const t=todayISO();
-  return sortOrders(ORDERS.filter(o=>o.dd<t&&o.status!=='delivered'&&o.status!=='cancelled'&&passFilters(o)));
+  const t=todayISO(), lo=addDays(t,-OVERDUE_WINDOW_DAYS);
+  return sortOrders(ORDERS.filter(o=>o.dd<t&&o.dd>=lo&&o.status!=='delivered'&&o.status!=='cancelled'&&passFilters(o)));
 }
 function beyondRangeCount(){const to=rangeToSafe();return ORDERS.filter(o=>o.dd>to&&o.status!=='cancelled').length;}
 function renderOrderList(list){
@@ -704,9 +723,9 @@ function renderHome(){
   const host=document.getElementById('days'), heading=document.getElementById('homeHeading');
   if(searchQuery.trim()){
     if(heading)heading.textContent='Search results';
-    const res=searchResults();
-    host.innerHTML=`<div class="results-head"><span><b>${res.length}</b> result${res.length!==1?'s':''} for “${searchQuery.trim()}”</span><button class="btn ghost sm" id="clearSearch">Clear search</button></div>`
-      +(res.length?renderOrderList(res):`<div class="empty">No orders match “${searchQuery.trim()}”.</div>`);
+    const res=searchResults(), CAP=100, shown=res.slice(0,CAP);
+    host.innerHTML=`<div class="results-head"><span><b>${res.length}</b> result${res.length!==1?'s':''} for “${searchQuery.trim()}”${res.length>CAP?` · showing first ${CAP}, refine to narrow`:''}</span><button class="btn ghost sm" id="clearSearch">Clear search</button></div>`
+      +(res.length?renderOrderList(shown):`<div class="empty">No orders match “${searchQuery.trim()}”.</div>`);
   } else if(overdueMode){
     if(heading)heading.textContent='Overdue';
     const res=overdueOrders();
@@ -727,8 +746,8 @@ function renderHome(){
 function bindCards(){
   document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.step,b.dataset.s));
   document.querySelectorAll('[data-adv]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.adv,b.dataset.next));
-  document.querySelectorAll('[data-maker]').forEach(s=>s.onchange=()=>{const o=byId(+s.dataset.maker);o.maker=s.value;renderCurrent();pushUpdate(o.id,{maker:s.value});if(s.value)toast(`Assigned <b>${s.value}</b> to ${o.cust} · ${o.no}.`);});
-  document.querySelectorAll('[data-urg]').forEach(b=>b.onclick=()=>{const o=byId(+b.dataset.urg);o.urgent=!o.urgent;renderCurrent();pushUpdate(o.id,{urgent:o.urgent});});
+  document.querySelectorAll('[data-maker]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.maker);o.maker=s.value;renderCurrent();pushUpdate(o.id,{maker:s.value});if(s.value)toast(`Assigned <b>${s.value}</b> to ${o.cust} · ${o.no}.`);});
+  document.querySelectorAll('[data-urg]').forEach(b=>b.onclick=()=>{if(!editUnlocked)return;const o=byId(+b.dataset.urg);o.urgent=!o.urgent;renderCurrent();pushUpdate(o.id,{urgent:o.urgent});});
   document.querySelectorAll('[data-addr]').forEach(b=>b.onclick=()=>document.getElementById('addr-'+b.dataset.addr).classList.toggle('show'));
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(+b.dataset.edit));
   document.querySelectorAll('[data-resc]').forEach(b=>b.onclick=()=>openReschedule(+b.dataset.resc));
@@ -743,6 +762,7 @@ async function pushUpdate(id,fields){
   if(error) toast('Could not save change: '+error.message);
 }
 function changeStatus(id,s){
+  if(!editUnlocked)return;
   const o=byId(id);o.status=s;renderCurrent();
   const m=STATUS_META[s];
   if(s==='dispatched') toast(`<b>${o.no} · ${o.cust}</b> — ready for dispatch. Logistics notified · 📍 ${o.addr||'address on file'}`);
@@ -751,13 +771,14 @@ function changeStatus(id,s){
 }
 let cxlArmed=null;
 function confirmCancel(btn,id){
+  if(!editUnlocked)return;
   if(cxlArmed!==id){cxlArmed=id;btn.textContent='Tap again to cancel';btn.classList.add('on');setTimeout(()=>{if(cxlArmed===id){cxlArmed=null;renderCurrent();}},3000);return;}
   cxlArmed=null;changeStatus(id,'cancelled');
 }
 
 /* ===== reschedule ===== */
 let reId=null;
-function openReschedule(id){reId=id;const o=byId(id);document.getElementById('reInfo').textContent=`${o.no} · ${o.cust} — currently ${fmtDayDate(o.dd)}`;document.getElementById('reDate').value=o.dd;openSheet('rescrim');}
+function openReschedule(id){if(!requireEdit())return;reId=id;const o=byId(id);document.getElementById('reInfo').textContent=`${o.no} · ${o.cust} — currently ${fmtDayDate(o.dd)}`;document.getElementById('reDate').value=o.dd;openSheet('rescrim');}
 document.getElementById('reCancel').onclick=()=>closeSheet('rescrim');
 document.getElementById('rescrim').onclick=e=>{if(e.target.id==='rescrim')closeSheet('rescrim');};
 document.getElementById('reSave').onclick=()=>{
@@ -798,15 +819,16 @@ document.getElementById('calPass').onkeydown=e=>{if(e.key==='Enter')document.get
 const SUBCOL={client:'client',type:'type',day:'preferred_day',prefs:'flower_prefs',val:'value_inr',last:'last_delivery',end:'end_date',status:'status'};
 function subFlag(s){if(s.status==='Expired')return '<span class="tag exp">Expired</span>';const days=(parseD(s.end||todayISO())-parseD(todayISO()))/(864e5);if(days<=7&&days>=0)return '<span class="tag soon">Expiring</span>';return '<span class="tag on">On-going</span>';}
 function renderSubs(){
-  const t=document.getElementById('subTable');
+  const t=document.getElementById('subTable'), ce=editUnlocked?'contenteditable':'';
   t.innerHTML=`<thead><tr><th>Client</th><th>Type</th><th>Day</th><th>Flowers</th><th>Value</th><th>Last</th><th>End</th><th>Status</th></tr></thead><tbody>${SUBS.map((s,i)=>`<tr>
-    <td contenteditable data-k="client" data-i="${i}"><b>${s.client}</b></td><td contenteditable data-k="type" data-i="${i}">${s.type||''}</td>
-    <td contenteditable data-k="day" data-i="${i}">${s.day||''}</td><td contenteditable data-k="prefs" data-i="${i}">${s.prefs||''}</td>
-    <td contenteditable data-k="val" data-i="${i}">${fmtINR(s.val)}</td><td contenteditable data-k="last" data-i="${i}">${s.last||''}</td>
-    <td contenteditable data-k="end" data-i="${i}">${s.end||''}</td><td>${subFlag(s)}</td></tr>`).join('')}</tbody>`;
-  bindEditable(t,SUBS,'subscriptions',SUBCOL);
+    <td ${ce} data-k="client" data-i="${i}"><b>${s.client}</b></td><td ${ce} data-k="type" data-i="${i}">${s.type||''}</td>
+    <td ${ce} data-k="day" data-i="${i}">${s.day||''}</td><td ${ce} data-k="prefs" data-i="${i}">${s.prefs||''}</td>
+    <td ${ce} data-k="val" data-i="${i}">${fmtINR(s.val)}</td><td ${ce} data-k="last" data-i="${i}">${s.last||''}</td>
+    <td ${ce} data-k="end" data-i="${i}">${s.end||''}</td><td>${subFlag(s)}</td></tr>`).join('')}</tbody>`;
+  if(editUnlocked) bindEditable(t,SUBS,'subscriptions',SUBCOL);
 }
 document.getElementById('addSub').onclick=async()=>{
+  if(!requireEdit())return;
   const row={client:'New client',type:'Weekly (1 Month)',preferred_day:'Monday',status:'On-Going',value_inr:0,flower_prefs:'—'};
   const {data,error}=await db.from('subscriptions').insert(row).select().single();
   if(error)return toast('Add failed: '+error.message);
@@ -819,13 +841,17 @@ let prodFilter={q:'',type:''};
 function renderProds(){
   const rows=CATALOG.map((p,i)=>({p,i})).filter(({p})=>(!prodFilter.type||p.type===prodFilter.type)&&(!prodFilter.q||p.name.toLowerCase().includes(prodFilter.q)));
   document.getElementById('prodHead').textContent=`Product catalogue · ${CATALOG.length} items`;
-  const t=document.getElementById('prodTable');
+  const t=document.getElementById('prodTable'), ce=editUnlocked?'contenteditable':'';
+  const typeCell=(p,i)=>editUnlocked
+    ? `<select class="mini" data-ptype="${i}">${['Bouquet','Vase Arrangement','Loose Flower','Foliage'].map(x=>`<option ${p.type===x?'selected':''}>${x}</option>`).join('')}</select>`
+    : (p.type||'');
   t.innerHTML=`<thead><tr><th>Product</th><th>Type</th><th>Price</th><th>Flowers / contents</th><th></th></tr></thead><tbody>${rows.map(({p,i})=>`<tr>
-    <td contenteditable data-k="name" data-i="${i}"><b>${p.name}</b></td>
-    <td><select class="mini" data-ptype="${i}">${['Bouquet','Vase Arrangement','Loose Flower','Foliage'].map(x=>`<option ${p.type===x?'selected':''}>${x}</option>`).join('')}</select></td>
-    <td contenteditable data-k="price" data-i="${i}">${p.price?fmtINR(p.price):'—'}</td>
-    <td contenteditable data-k="flowers" data-i="${i}">${p.flowers||''}</td>
-    <td><button class="iconbtn" data-del="${i}">Remove</button></td></tr>`).join('')}</tbody>`;
+    <td ${ce} data-k="name" data-i="${i}"><b>${p.name}</b></td>
+    <td>${typeCell(p,i)}</td>
+    <td ${ce} data-k="price" data-i="${i}">${p.price?fmtINR(p.price):'—'}</td>
+    <td ${ce} data-k="flowers" data-i="${i}">${p.flowers||''}</td>
+    <td>${editUnlocked?`<button class="iconbtn" data-del="${i}">Remove</button>`:''}</td></tr>`).join('')}</tbody>`;
+  if(!editUnlocked)return;
   bindEditable(t,CATALOG,'products',PRODCOL);
   t.querySelectorAll('[data-ptype]').forEach(sel=>sel.onchange=()=>{const i=+sel.dataset.ptype;CATALOG[i].type=sel.value;if(CATALOG[i].id)db.from('products').update({type:sel.value}).eq('id',CATALOG[i].id);LOOSE=CATALOG.filter(x=>x.type==='Loose Flower'||x.type==='Foliage').map(x=>({name:x.name,price:x.price}));});
   t.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.del,p=CATALOG[i];if(p.id)await db.from('products').delete().eq('id',p.id);CATALOG.splice(i,1);renderProds();});
@@ -833,11 +859,12 @@ function renderProds(){
 document.getElementById('prodSearchTab').oninput=e=>{prodFilter.q=e.target.value.toLowerCase();renderProds();};
 document.getElementById('prodTypeFilter').onchange=e=>{prodFilter.type=e.target.value;renderProds();};
 document.getElementById('addProd').onclick=async()=>{
+  if(!requireEdit())return;
   const {data,error}=await db.from('products').insert({name:'New product',type:'Bouquet',price_inr:0,flowers:'—'}).select().single();
   if(error)return toast('Add failed: '+error.message);
   CATALOG.unshift({id:data.id,name:data.name,type:data.type,price:data.price_inr,flowers:data.flowers});renderProds();
 };
-document.getElementById('uploadCsv').onclick=()=>toast('CSV import: use Supabase → Table Editor → products → Import for bulk uploads.');
+document.getElementById('uploadCsv').onclick=()=>{if(!requireEdit())return;toast('CSV import: use Supabase → Table Editor → products → Import for bulk uploads.');};
 function bindEditable(table,arr,tbl,colmap){
   table.querySelectorAll('td[contenteditable]').forEach(td=>td.onblur=()=>{
     const i=+td.dataset.i,k=td.dataset.k;let v=td.innerText.trim();
@@ -861,6 +888,7 @@ function toggleNoField(){
 }
 document.getElementById('fSrc').onchange=toggleNoField;
 function openAdd(){
+  if(!requireEdit())return;
   editId=null;document.getElementById('formTitle').textContent='Add order';document.getElementById('formOno').textContent='';
   setFormType('catalogue');looseChosen=[];document.getElementById('looseChosen').textContent='';
   ['prodSearch','fVal','fCust','fPhone','fAddr','cPalette','cFlowers','vFlowers','vVase','fNote','fRemarks'].forEach(id=>document.getElementById(id).value='');
@@ -872,6 +900,7 @@ function openAdd(){
   openSheet('scrim');
 }
 function openEdit(id){
+  if(!requireEdit())return;
   const o=byId(id);editId=id;
   document.getElementById('formTitle').textContent='Edit order';document.getElementById('formOno').textContent='Order '+o.no;
   setFormType('catalogue');document.getElementById('prodSearch').value=o.det||o.type||'';document.getElementById('autofill').textContent='';
@@ -951,6 +980,24 @@ document.querySelectorAll('.tab,.bn').forEach(t=>t.onclick=()=>switchView(t.data
 document.getElementById('addBtn').onclick=openAdd;document.getElementById('cancelAdd').onclick=closeForm;
 document.getElementById('fab').onclick=openAdd;
 document.getElementById('orderSearch').oninput=e=>{searchQuery=e.target.value;if(searchQuery.trim())overdueMode=false;renderHome();};
+
+/* ===== edit gate (view vs edit) ===== */
+function applyEditLock(){
+  document.body.classList.toggle('locked',!editUnlocked);
+  const b=document.getElementById('editLock');
+  if(b){b.textContent=editUnlocked?'🔓 Editing on':'🔒 View only';b.classList.toggle('on',editUnlocked);}
+}
+function requireEdit(){if(editUnlocked)return true;openSheet('editGate');setTimeout(()=>{const p=document.getElementById('editPass');if(p)p.focus();},60);return false;}
+document.getElementById('editLock').onclick=()=>{
+  if(editUnlocked){editUnlocked=false;sessionStorage.removeItem('urth_edit');applyEditLock();renderCurrent();toast('Editing locked — view only.');}
+  else requireEdit();
+};
+document.getElementById('editUnlockBtn').onclick=()=>{
+  if(document.getElementById('editPass').value===EDIT_PASS){editUnlocked=true;sessionStorage.setItem('urth_edit','1');document.getElementById('editPass').value='';document.getElementById('editErr').textContent='';closeSheet('editGate');applyEditLock();renderCurrent();toast('Editing unlocked.');}
+  else document.getElementById('editErr').textContent='Incorrect passcode. Try again.';
+};
+document.getElementById('editPass').onkeydown=e=>{if(e.key==='Enter')document.getElementById('editUnlockBtn').click();};
+document.getElementById('editGate').onclick=e=>{if(e.target.id==='editGate')closeSheet('editGate');};
 scrim.onclick=e=>{if(e.target===scrim)closeForm();};
 /* mobile back handling for sheets */
 function openSheet(id){document.getElementById(id).classList.add('show');history.pushState({sheet:id},'');}
@@ -967,6 +1014,7 @@ dTo.onchange=()=>{rangeTo=dTo.value;if(rangeTo<rangeFrom)rangeFrom=rangeTo;syncR
 function showLogin(){document.getElementById('login').style.display='flex';}
 async function startApp(){
   document.getElementById('login').style.display='none';
+  applyEditLock();
   document.getElementById('days').innerHTML='<div class="empty">Loading your orders…</div>';
   await loadAll();syncRange();switchView('home');startRealtime();
 }
