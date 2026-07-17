@@ -178,6 +178,7 @@
   .disc-ctl .drm{border:none; background:none; color:var(--green-soft); font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline}
   .prod-item{display:block; margin:2px 0}
   .disc-pill{font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:999px; background:#F0E2D6; color:var(--clay); letter-spacing:.3px; margin-left:6px}
+  .deliv-pill{font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:999px; background:#E4EAE0; color:var(--green); letter-spacing:.3px; margin-left:6px}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   .chk{display:flex; align-items:center; gap:9px; margin-top:14px; font-size:14px; font-weight:700; color:var(--green)}
   .chk input{width:auto}
@@ -596,8 +597,8 @@ let calY=new Date().getFullYear(), calM=new Date().getMonth();
 const recentLocal=new Set();
 
 /* ===== field mapping ===== */
-const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,phone:r.phone||'',od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,items:Array.isArray(r.items)&&r.items.length?r.items:null,discount:r.discount||null,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,pay:r.payment_status,addr:r.address,status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,remarks:r.remarks||''});
-const toDB=o=>({order_no:o.no,customer_name:o.cust,phone:o.phone||null,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,items:(Array.isArray(o.items)&&o.items.length)?o.items:null,discount:o.discount||null,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:o.maker,payment_status:o.pay,address:o.addr,status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:!!o.polaroid,remarks:o.remarks||null});
+const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,phone:r.phone||'',od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,items:Array.isArray(r.items)&&r.items.length?r.items:null,discount:r.discount||null,delivery:r.delivery_inr||0,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,pay:r.payment_status,addr:r.address,status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,remarks:r.remarks||''});
+const toDB=o=>({order_no:o.no,customer_name:o.cust,phone:o.phone||null,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,items:(Array.isArray(o.items)&&o.items.length)?o.items:null,discount:o.discount||null,delivery_inr:o.delivery||0,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:o.maker,payment_status:o.pay,address:o.addr,status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:!!o.polaroid,remarks:o.remarks||null});
 /* items accessor: real breakdown if present, else the legacy single-item shape from scalar columns */
 const orderItems=o=>(Array.isArray(o.items)&&o.items.length)?o.items:[{type:o.type,det:o.det,val:o.val}];
 const phoneDigits=p=>String(p||'').replace(/\D/g,'');
@@ -718,6 +719,7 @@ function orderCard(o){
     ? its.map(it=>`<span class="prod-item">${esc(it.det||it.type||'Item')} <span class="typepill">${esc(typeLabel(it))}</span></span>`).join('')
     : `${esc(productLine(o))} <span class="typepill">${esc(typeLabel(o))}</span>`;
   const discPill=o.discount?`<span class="disc-pill">${o.discount.type==='pct'?esc(o.discount.value)+'% off':'−'+esc(fmtINR(o.discount.value))}</span>`:'';
+  const delivPill=(Number(o.delivery)||0)>0?`<span class="deliv-pill">🛵 ${esc(fmtINR(o.delivery))} delivery</span>`:'';
   return `<div class="${cls}" data-id="${o.id}">
     <div class="row1">
       <div><div class="cust">${esc(o.cust)||'—'}</div><div class="ono">${esc(o.no)||'#—'} · ${fmtDayDate(o.dd)}${o.time?' · '+esc(o.time):''}</div></div>
@@ -730,7 +732,7 @@ function orderCard(o){
     </div>
     <div class="prod">${prodHtml}</div>
     <div class="meta">
-      <span class="val-amt">${fmtINR(o.val)}</span>${discPill}
+      <span class="val-amt">${fmtINR(o.val)}</span>${discPill}${delivPill}
       ${o.src?`<span class="pill">${esc(o.src)}</span>`:''}${o.trans?`<span>${esc(o.trans)}</span>`:''}
       <span>${/pending/i.test(o.pay)?'⚠︎ <b>Pending</b>':(o.pay?('✓ '+esc(o.pay)):'')}</span>${makerHtml}${contactHtml}
     </div>
@@ -973,7 +975,7 @@ function bindEditable(table,arr,tbl,colmap){
 const scrim=document.getElementById('scrim');
 let editId=null, formType='catalogue', looseChosen=[];
 /* multi-item order state: the staged items and an optional order-level discount */
-let stagedItems=[], orderDiscount=null;
+let stagedItems=[], orderDiscount=null, orderDelivery=null; // orderDelivery: null = no delivery charge; a number (incl. 0) = charge added
 const gel=id=>document.getElementById(id);
 function fillSelect(id,opts,val){document.getElementById(id).innerHTML=opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('');}
 function setFormType(t){formType=t;document.querySelectorAll('#typeSel button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));['catalogue','custom','vase','loose'].forEach(x=>document.getElementById('fg-'+x).classList.toggle('show',x===t));}
@@ -1001,14 +1003,15 @@ function orderTotals(){
   const subtotal=stagedItems.reduce((s,i)=>s+(Number(i.val)||0),0);
   let off=orderDiscount?(orderDiscount.type==='pct'?Math.round(subtotal*(Number(orderDiscount.value)||0)/100):(Number(orderDiscount.value)||0)):0;
   off=Math.max(0,Math.min(off,subtotal));
-  return {subtotal,off,total:subtotal-off};
+  const delivery=Math.max(0,Number(orderDelivery)||0);
+  return {subtotal,off,delivery,total:subtotal-off+delivery};
 }
 function renderItems(){
   const box=gel('itemsBlock');
   if(!stagedItems.length){box.innerHTML='<div class="items-empty">No items yet — build one above and tap “Add to order.”</div>';return;}
-  const {subtotal,off,total}=orderTotals();
+  const {subtotal,off,delivery,total}=orderTotals();
   const rows=stagedItems.map((it,i)=>`<div class="item-row"><div class="ir-main"><div class="ir-det">${esc(it.det||it.type||'Item')}</div><div class="ir-type">${esc(typeLabel(it))}</div></div><span class="ir-val">${fmtINR(it.val)}</span><button type="button" class="ir-rm" data-rm="${i}" title="Remove item" aria-label="Remove item">✕</button></div>`).join('');
-  let disc;
+  let disc, deliv;
   if(orderDiscount){
     disc=`<div class="disc-ctl">
       <span class="dtoggle"><button type="button" data-dt="amt" class="${orderDiscount.type==='amt'?'on':''}">₹</button><button type="button" data-dt="pct" class="${orderDiscount.type==='pct'?'on':''}">%</button></span>
@@ -1020,10 +1023,21 @@ function renderItems(){
   }else{
     disc=`<div class="price-line"><button type="button" class="disc-add" id="discAddBtn">+ Add order discount</button><span></span></div>`;
   }
+  if(orderDelivery!==null){
+    deliv=`<div class="disc-ctl">
+      <span class="dlabel">Delivery ₹</span>
+      <input type="number" id="delivInput" min="0" placeholder="0" value="${orderDelivery||''}" />
+      <button type="button" class="drm" data-delrm="1">Remove</button>
+    </div>
+    <div class="price-line"><span>Delivery</span><span class="pv">${fmtINR(delivery)}</span></div>`;
+  }else{
+    deliv=`<div class="price-line"><button type="button" class="disc-add" id="delivAddBtn">+ Add delivery cost</button><span></span></div>`;
+  }
   box.innerHTML=`<div class="items-list">${rows}</div>
     <div class="pricing">
       <div class="price-line"><span>Subtotal</span><span class="pv">${fmtINR(subtotal)}</span></div>
       ${disc}
+      ${deliv}
       <div class="price-line total"><span>Order total</span><span class="pv">${fmtINR(total)}</span></div>
     </div>`;
   box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{stagedItems.splice(+b.dataset.rm,1);renderItems();});
@@ -1031,6 +1045,9 @@ function renderItems(){
   box.querySelectorAll('[data-dt]').forEach(b=>b.onclick=()=>{orderDiscount.type=b.dataset.dt;renderItems();});
   const dIn=gel('discInput');if(dIn)dIn.oninput=()=>{orderDiscount.value=Number(dIn.value)||0;const t=orderTotals();box.querySelectorAll('.pv.off')[0]&&(box.querySelectorAll('.pv.off')[0].textContent='−'+fmtINR(t.off));box.querySelector('.price-line.total .pv').textContent=fmtINR(t.total);};
   const drm=box.querySelector('[data-drm]');if(drm)drm.onclick=()=>{orderDiscount=null;renderItems();};
+  const delAddBtn=gel('delivAddBtn');if(delAddBtn)delAddBtn.onclick=()=>{orderDelivery=0;renderItems();gel('delivInput')&&gel('delivInput').focus();};
+  const delIn=gel('delivInput');if(delIn)delIn.oninput=()=>{orderDelivery=Math.max(0,Number(delIn.value)||0);const t=orderTotals();box.querySelector('.price-line.total .pv').textContent=fmtINR(t.total);const dl=[...box.querySelectorAll('.price-line')].find(l=>l.firstElementChild&&l.firstElementChild.textContent==='Delivery');dl&&(dl.querySelector('.pv').textContent=fmtINR(t.delivery));};
+  const delrm=box.querySelector('[data-delrm]');if(delrm)delrm.onclick=()=>{orderDelivery=null;renderItems();};
 }
 gel('addItemBtn').onclick=()=>addComposerItem(false);
 function toggleNoField(){
@@ -1043,7 +1060,7 @@ document.getElementById('fSrc').onchange=toggleNoField;
 function openAdd(){
   if(!requireEdit())return;
   editId=null;document.getElementById('formTitle').textContent='Add order';document.getElementById('formOno').textContent='';
-  stagedItems=[];orderDiscount=null;clearComposer();renderItems();
+  stagedItems=[];orderDiscount=null;orderDelivery=null;clearComposer();renderItems();
   ['fCust','fPhone','fAddr','fNote','fRemarks'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fPolaroid').checked=false;
   fillSelect('fSrc',SOURCES,'Whatsapp');fillSelect('fTrans',TRANSPORT,'2 Wheeler');fillSelect('fPay',PAYMENTS,'Paid');
@@ -1057,7 +1074,7 @@ function openEdit(id){
   const o=byId(id);if(!o)return;editId=id;
   document.getElementById('formTitle').textContent='Edit order';document.getElementById('formOno').textContent='Order '+o.no;
   clearComposer();stagedItems=orderItems(o).map(x=>({type:x.type||'Bouquet',det:x.det||x.type||'',val:Number(x.val)||0}));
-  orderDiscount=o.discount?{type:o.discount.type,value:o.discount.value}:null;renderItems();
+  orderDiscount=o.discount?{type:o.discount.type,value:o.discount.value}:null;orderDelivery=(Number(o.delivery)||0)>0?Number(o.delivery):null;renderItems();
   const fNo=document.getElementById('fNo');fNo.readOnly=false;fNo.value=o.no||'';document.getElementById('fNoHint').textContent='';
   document.getElementById('fCust').value=o.cust||'';document.getElementById('fPhone').value=o.phone||'';
   document.getElementById('fOd').value=o.od||rangeFrom;document.getElementById('fDd').value=o.dd||rangeFrom;
@@ -1094,7 +1111,7 @@ document.getElementById('saveAdd').onclick=async()=>{
   const det=items.map(i=>i.det).join(' + ');
   const type=items.length>1?'Mixed':items[0].type;
   const discount=orderDiscount&&(Number(orderDiscount.value)||0)>0?{type:orderDiscount.type,value:Number(orderDiscount.value)||0}:null;
-  const common={cust,phone:document.getElementById('fPhone').value.trim(),det,type,items,discount,val:total,time:document.getElementById('fTime').value,
+  const common={cust,phone:document.getElementById('fPhone').value.trim(),det,type,items,discount,delivery:Math.max(0,Number(orderDelivery)||0),val:total,time:document.getElementById('fTime').value,
     od:document.getElementById('fOd').value,dd:document.getElementById('fDd').value,src:document.getElementById('fSrc').value,
     trans:document.getElementById('fTrans').value,pay:document.getElementById('fPay').value,maker:document.getElementById('fMaker').value,
     addr:document.getElementById('fAddr').value.trim(),note:document.getElementById('fNote').value.trim(),
