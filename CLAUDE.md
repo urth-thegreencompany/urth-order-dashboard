@@ -45,7 +45,9 @@ orders (
   urgent boolean default false, created_at timestamptz default now(),
   message_note text,       -- customer's note to include with the flowers
   polaroid boolean default false,  -- whether a polaroid photo is requested
-  remarks text             -- internal team notes, not customer-facing
+  remarks text,            -- internal team notes, not customer-facing
+  items jsonb,             -- multi-item breakdown: [{type,det,val},...]; null = legacy single-item
+  discount jsonb           -- order-level discount {type:'pct'|'amt', value}; null = none
 )
 ```
 RLS: enabled on all three tables, policy = any `authenticated` user can read/write.
@@ -70,6 +72,16 @@ RLS: enabled on all three tables, policy = any `authenticated` user can read/wri
 - **Order types**: Bouquet (from catalogue, autofills price+flowers), Custom (colour palette +
   flower types, free text), Vase Arrangement (flowers + vase picker), Loose Flowers
   (multi-select from catalogue stems).
+- **Multi-item orders**: one order can hold several items (e.g. a bouquet + loose flowers). The
+  breakdown lives in `orders.items` (jsonb array of `{type,det,val}`). The legacy scalar columns
+  are kept as an auto-derived summary, recomputed on every save: `value_inr` = discounted total,
+  `details` = items joined with " + ", `order_type` = single item's type or "Mixed". So KPIs
+  (revenue sums `value_inr`) and search (matches `details`) keep working unchanged, and the ~7,675
+  historical rows (`items` null) read as a single implicit item via the `orderItems(o)` accessor.
+  The add/edit form is a **composer + staged list**: fill one item, tap "+ Add to order" to stack
+  it, repeat; a filled-but-unadded composer is auto-folded in on Save. An **order-level discount**
+  (`orders.discount` = `{type:'pct'|'amt', value}`) applies to the whole order, not per item;
+  `value_inr` stores the post-discount total so revenue reflects reality.
 - **Urgent** is a boolean toggle (⚡) that visually rings the card and sorts it to the top of
   its delivery-time slot.
 
