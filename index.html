@@ -905,6 +905,7 @@ function changeStatus(id,s){
   const m=STATUS_META[s];
   if(s==='dispatched') toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> — ready for dispatch. Logistics notified · 📍 ${esc(o.addr)||'address on file'}`);
   else if(m) toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> — ${m.label}.`);
+  if(NOTIFY_LABEL[s]) osNotify(o.no,o.cust,NOTIFY_LABEL[s], s==='dispatched'?o.addr:'');
   pushUpdate(id,{status:s});
 }
 let cxlArmed=null;
@@ -1235,14 +1236,16 @@ function initNotifyBtn(){
   };
   refreshNotifyBtn();
 }
+function osNotify(no,cust,label,addr){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const body=((cust||'')+(addr?' · '+addr:'')).trim();
+  try{new Notification(`urth · ${no||'Order'} — ${label}`,{body:body||undefined,tag:'order-'+no,icon:'assets/favicon-192.png'});}catch(e){}
+}
 function notifyStatus(nw){
   const label=NOTIFY_LABEL[nw.status];if(!label)return;
   const who=nw.customer_name||'', showAddr=nw.status==='dispatched'&&nw.address;
   toast(`<b>${esc(nw.order_no)} · ${esc(who)}</b> — ${esc(label)}${showAddr?' · 📍 '+esc(nw.address):''}`);
-  if(('Notification' in window)&&Notification.permission==='granted'){
-    const body=(who+(showAddr?' · '+nw.address:'')).trim();
-    try{new Notification(`urth · ${nw.order_no||'Order'} — ${label}`,{body:body||undefined,tag:'order-'+nw.id,icon:'assets/favicon-192.png'});}catch(e){}
-  }
+  osNotify(nw.order_no,who,label,showAddr?nw.address:'');
 }
 function startRealtime(){
   db.channel('orders-live').on('postgres_changes',{event:'*',schema:'public',table:'orders'},payload=>{
