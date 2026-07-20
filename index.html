@@ -388,6 +388,7 @@
       <div class="datebar">
         <div class="rng"><span>From</span><input type="date" id="dateFrom" /></div>
         <div class="rng"><span>To</span><input type="date" id="dateTo" /></div>
+        <button class="lockbtn" id="notifyBtn" title="Get a pop-up when an order is marked Ready, Dispatched or Cancelled" style="display:none">🔔 Enable alerts</button>
         <button class="lockbtn" id="editLock" title="Editing is passcode-protected">🔒 View only</button>
         <button class="signout" id="signout">Sign out</button>
       </div>
@@ -1217,12 +1218,38 @@ document.getElementById('saveAdd').onclick=async()=>{
 };
 
 /* ===== realtime ===== */
+/* ===== status-change notifications (in-app toast + OS pop-up) ===== */
+const NOTIFY_LABEL={ready:'Ready',dispatched:'Dispatched',cancelled:'Cancelled'};
+function refreshNotifyBtn(){
+  const b=document.getElementById('notifyBtn');if(!b)return;
+  if(!('Notification' in window)||Notification.permission==='granted'){b.style.display='none';return;}
+  b.style.display='';b.textContent=Notification.permission==='denied'?'🔔 Alerts blocked':'🔔 Enable alerts';
+}
+function initNotifyBtn(){
+  const b=document.getElementById('notifyBtn');if(!b)return;
+  b.onclick=async()=>{
+    if(!('Notification' in window))return toast('This browser doesn’t support notifications.');
+    if(Notification.permission==='denied')return toast('Alerts are blocked — turn them on in your browser’s site settings.');
+    const p=await Notification.requestPermission();refreshNotifyBtn();
+    if(p==='granted'){try{new Notification('urth · alerts on',{body:'You’ll get a pop-up on Ready, Dispatched & Cancelled.',icon:'assets/favicon-192.png'});}catch(e){}toast('🔔 Order alerts enabled.');}
+  };
+  refreshNotifyBtn();
+}
+function notifyStatus(nw){
+  const label=NOTIFY_LABEL[nw.status];if(!label)return;
+  const who=nw.customer_name||'', showAddr=nw.status==='dispatched'&&nw.address;
+  toast(`<b>${esc(nw.order_no)} · ${esc(who)}</b> — ${esc(label)}${showAddr?' · 📍 '+esc(nw.address):''}`);
+  if(('Notification' in window)&&Notification.permission==='granted'){
+    const body=(who+(showAddr?' · '+nw.address:'')).trim();
+    try{new Notification(`urth · ${nw.order_no||'Order'} — ${label}`,{body:body||undefined,tag:'order-'+nw.id,icon:'assets/favicon-192.png'});}catch(e){}
+  }
+}
 function startRealtime(){
   db.channel('orders-live').on('postgres_changes',{event:'*',schema:'public',table:'orders'},payload=>{
     const {eventType,new:nw,old:od}=payload;
     if(eventType==='INSERT'){if(!ORDERS.find(o=>o.id===nw.id)){ORDERS.push(fromDB(nw));recomputeRepeat();}}
-    else if(eventType==='UPDATE'){const i=ORDERS.findIndex(o=>o.id===nw.id);if(i>=0)ORDERS[i]=fromDB(nw);
-      if(nw.status==='dispatched'&&!recentLocal.has(nw.id+':dispatched'))toast(`<b>${esc(nw.order_no)} · ${esc(nw.customer_name)}</b> — ready for dispatch · 📍 ${esc(nw.address)}`);}
+    else if(eventType==='UPDATE'){const i=ORDERS.findIndex(o=>o.id===nw.id);const prev=i>=0?ORDERS[i].status:null;if(i>=0)ORDERS[i]=fromDB(nw);
+      if(nw.status!==prev&&!recentLocal.has(nw.id+':'+nw.status))notifyStatus(nw);}
     else if(eventType==='DELETE'){const i=ORDERS.findIndex(o=>o.id===od.id);if(i>=0)ORDERS.splice(i,1);}
     renderCurrent();
   }).subscribe();
@@ -1271,7 +1298,7 @@ async function startApp(){
   document.getElementById('login').style.display='none';
   applyEditLock();
   document.getElementById('days').innerHTML='<div class="empty">Loading your orders…</div>';
-  await loadAll();syncRange();switchView('home');startRealtime();
+  await loadAll();syncRange();switchView('home');startRealtime();initNotifyBtn();
 }
 document.getElementById('liBtn').onclick=async()=>{
   const email=document.getElementById('liEmail').value.trim(),password=document.getElementById('liPass').value;
