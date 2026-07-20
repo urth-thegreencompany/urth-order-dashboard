@@ -475,7 +475,10 @@
         <option value="catalogue">From catalogue</option>
         <option value="custom">Custom bouquet</option>
         <option value="vase">Vase arrangement</option>
+        <option value="vaseplanter">Vase / Planter</option>
         <option value="loose">Loose flowers</option>
+        <option value="dry">Dry flowers</option>
+        <option value="plants">Plants</option>
         <option value="subscription">Subscription</option>
       </select>
 
@@ -501,6 +504,17 @@
       <div class="field-group" id="fg-subscription">
         <label>Subscription plan</label><input type="text" id="sPlan" placeholder="e.g. Weekly (1 Month), Fortnightly…" />
         <label>Flower preferences</label><input type="text" id="sFlowers" placeholder="e.g. Seasonal mix, no lilies" />
+      </div>
+      <div class="field-group" id="fg-vaseplanter">
+        <label>Vase / Planter</label>
+        <div class="combo"><input type="text" id="vpSearch" placeholder="Search vase or planter — e.g. Hexagon Planter…" autocomplete="off" /><div class="combo-list" id="vpList"></div></div>
+        <div class="autofill" id="vpChosen"></div>
+      </div>
+      <div class="field-group" id="fg-dry">
+        <label>Dry flower details</label><input type="text" id="dryDet" placeholder="e.g. Dried palm, bunny tails & pampas — ivory" />
+      </div>
+      <div class="field-group" id="fg-plants">
+        <label>Plant details</label><input type="text" id="plantDet" placeholder="e.g. Snake plant in ceramic pot" />
       </div>
 
       <div class="compose-actions">
@@ -685,6 +699,7 @@ function renderOrderList(list){
 const productLine=o=>o.det||o.type||'Order';
 function typeLabel(o){const t=(o.type||'').toLowerCase();
   if(t.includes('vase'))return 'Vase';if(t.includes('loose'))return 'Loose';
+  if(t.includes('dry'))return 'Dry flowers';if(t.includes('plant'))return 'Plant';
   if(t.includes('subscription'))return 'Subscription';if(t.includes('custom')||o.det==='Custom')return 'Custom';
   if(t.includes('bouquet'))return 'Bouquet';return (o.type||'Order').split(',')[0];}
 const inRange=()=>ORDERS.filter(o=>o.dd>=rangeFrom&&o.dd<=rangeToSafe());
@@ -996,7 +1011,7 @@ const POLAROID_FEE=150;
 let stagedItems=[], orderDiscount=null, orderDelivery=null; // orderDelivery: null = no delivery charge; a number (incl. 0) = charge added
 const gel=id=>document.getElementById(id);
 function fillSelect(id,opts,val){document.getElementById(id).innerHTML=opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('');}
-function setFormType(t){formType=t;const sel=document.getElementById('typeSel');if(sel.value!==t)sel.value=t;['catalogue','custom','vase','loose','subscription'].forEach(x=>document.getElementById('fg-'+x).classList.toggle('show',x===t));}
+function setFormType(t){formType=t;const sel=document.getElementById('typeSel');if(sel.value!==t)sel.value=t;['catalogue','custom','vase','vaseplanter','loose','dry','plants','subscription'].forEach(x=>document.getElementById('fg-'+x).classList.toggle('show',x===t));}
 document.getElementById('typeSel').onchange=e=>setFormType(e.target.value);
 
 /* ----- item composer (build one item from the active field group) ----- */
@@ -1009,11 +1024,14 @@ function composerRead(){
   else if(formType==='vase'){const vf=gel('vFlowers').value.trim(),vv=gel('vVase').value.trim();base=(vf||vv)?{type:'Vase Arrangement',det:'Vase — '+vf+(vv?(' in '+vv):''),val:v}:null;}
   else if(formType==='loose'){const ls=looseChosen.join(', ')||gel('looseSearch').value.trim();base=ls?{type:'Loose Flowers',det:'Loose — '+ls,val:v}:null;}
   else if(formType==='subscription'){const pl=gel('sPlan').value.trim(),fl=gel('sFlowers').value.trim();base=(pl||fl)?{type:'Subscription',det:'Subscription — '+pl+(fl?(' / '+fl):''),val:v}:null;}
+  else if(formType==='vaseplanter'){const vp=gel('vpSearch').value.trim();base=vp?{type:'Vase',det:vp,val:v}:null;}
+  else if(formType==='dry'){const dd=gel('dryDet').value.trim();base=dd?{type:'Dry Flowers',det:'Dry — '+dd,val:v}:null;}
+  else if(formType==='plants'){const pd=gel('plantDet').value.trim();base=pd?{type:'Plant',det:'Plant — '+pd,val:v}:null;}
   return base?{...base,qty}:null;
 }
 function clearComposer(){
-  setFormType('catalogue');looseChosen=[];gel('looseChosen').textContent='';gel('autofill').textContent='';
-  ['prodSearch','cPalette','cFlowers','vFlowers','vVase','looseSearch','sPlan','sFlowers','itemVal'].forEach(id=>gel(id).value='');
+  setFormType('catalogue');looseChosen=[];gel('looseChosen').textContent='';gel('autofill').textContent='';gel('vpChosen').textContent='';
+  ['prodSearch','cPalette','cFlowers','vFlowers','vVase','looseSearch','sPlan','sFlowers','vpSearch','dryDet','plantDet','itemVal'].forEach(id=>gel(id).value='');
   gel('itemQty').value=1;
 }
 function addComposerItem(silent){
@@ -1129,6 +1147,7 @@ function wireCombo(inputId,listId,itemsRef,onPick){
 }
 wireCombo('prodSearch','prodList',()=>CATALOG,p=>{document.getElementById('prodSearch').value=p.name;document.getElementById('itemVal').value=p.price||'';document.getElementById('autofill').textContent=p.flowers?'✿ '+p.flowers:'';});
 wireCombo('vVase','vaseList',VASES,v=>{document.getElementById('vVase').value=v.name;});
+wireCombo('vpSearch','vpList',VASES,v=>{document.getElementById('vpSearch').value=v.name;document.getElementById('itemVal').value=v.price||'';document.getElementById('vpChosen').textContent=v.price?('✔ '+fmtINR(v.price)):'';});
 function looseSum(){return looseChosen.reduce((s,nm)=>{const f=LOOSE.find(x=>x.name===nm);return s+((f&&f.price)||0);},0);}
 wireCombo('looseSearch','looseList',()=>LOOSE,l=>{looseChosen.push(l.name);document.getElementById('looseChosen').textContent='✿ '+looseChosen.map(nm=>{const f=LOOSE.find(x=>x.name===nm);return nm+((f&&f.price)?` (${fmtINR(f.price)}${f.unit?' / '+f.unit:''})`:'');}).join(', ');document.getElementById('looseSearch').value='';document.getElementById('itemVal').value=looseSum()||'';});
 
