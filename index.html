@@ -141,9 +141,6 @@
   .sheet .hint{font-size:12.5px; color:var(--green-soft); margin-bottom:12px}
   label{display:block; font-size:11px; font-weight:800; color:var(--green); text-transform:uppercase; letter-spacing:.4px; margin:12px 0 5px}
   input[type=text],input[type=number],input[type=password],input[type=email],input[type=search],select,textarea{width:100%; font-family:var(--sans); font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink)}
-  .typesel{display:flex; gap:6px; flex-wrap:wrap; margin-top:4px}
-  .typesel button{flex:1; min-width:120px; border:1px solid var(--line); background:#fff; color:var(--green-soft); border-radius:10px; padding:9px; font-size:13px; font-weight:700}
-  .typesel button.on{background:var(--forest); color:#F4ECE2; border-color:var(--forest)}
   .combo{position:relative}
   .combo-list{position:absolute; left:0; right:0; top:100%; margin-top:4px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); max-height:240px; overflow:auto; z-index:5; display:none}
   .combo-list.show{display:block}
@@ -307,7 +304,6 @@
     .day-head h2{font-size:17px}
     .sheet{padding:0 15px 26px}
     .sheet-top{margin:0 -15px 10px;padding:13px 15px}
-    .typesel button{min-width:calc(50% - 3px)}
   }
   /* --- production polish: motion, focus, hover, refinement --- */
   :root{color-scheme:light}
@@ -463,12 +459,13 @@
       <div class="hint" id="formOno"></div>
 
       <label>Order type</label>
-      <div class="typesel" id="typeSel">
-        <button data-t="catalogue" class="on">From catalogue</button>
-        <button data-t="custom">Custom bouquet</button>
-        <button data-t="vase">Vase arrangement</button>
-        <button data-t="loose">Loose flowers</button>
-      </div>
+      <select id="typeSel">
+        <option value="catalogue">From catalogue</option>
+        <option value="custom">Custom bouquet</option>
+        <option value="vase">Vase arrangement</option>
+        <option value="loose">Loose flowers</option>
+        <option value="subscription">Subscription</option>
+      </select>
 
       <div class="field-group show" id="fg-catalogue">
         <label>Product</label>
@@ -488,6 +485,10 @@
         <label>Loose flowers</label>
         <div class="combo"><input type="text" id="looseSearch" placeholder="Search stems to add…" autocomplete="off" /><div class="combo-list" id="looseList"></div></div>
         <div class="autofill" id="looseChosen"></div>
+      </div>
+      <div class="field-group" id="fg-subscription">
+        <label>Subscription plan</label><input type="text" id="sPlan" placeholder="e.g. Weekly (1 Month), Fortnightly…" />
+        <label>Flower preferences</label><input type="text" id="sFlowers" placeholder="e.g. Seasonal mix, no lilies" />
       </div>
 
       <div class="grid2" style="align-items:end">
@@ -974,12 +975,13 @@ function bindEditable(table,arr,tbl,colmap){
 /* ===== ADD / EDIT ORDER ===== */
 const scrim=document.getElementById('scrim');
 let editId=null, formType='catalogue', looseChosen=[];
+const POLAROID_FEE=150;
 /* multi-item order state: the staged items and an optional order-level discount */
 let stagedItems=[], orderDiscount=null, orderDelivery=null; // orderDelivery: null = no delivery charge; a number (incl. 0) = charge added
 const gel=id=>document.getElementById(id);
 function fillSelect(id,opts,val){document.getElementById(id).innerHTML=opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('');}
-function setFormType(t){formType=t;document.querySelectorAll('#typeSel button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));['catalogue','custom','vase','loose'].forEach(x=>document.getElementById('fg-'+x).classList.toggle('show',x===t));}
-document.querySelectorAll('#typeSel button').forEach(b=>b.onclick=()=>setFormType(b.dataset.t));
+function setFormType(t){formType=t;const sel=document.getElementById('typeSel');if(sel.value!==t)sel.value=t;['catalogue','custom','vase','loose','subscription'].forEach(x=>document.getElementById('fg-'+x).classList.toggle('show',x===t));}
+document.getElementById('typeSel').onchange=e=>setFormType(e.target.value);
 
 /* ----- item composer (build one item from the active field group) ----- */
 function composerRead(){
@@ -988,11 +990,12 @@ function composerRead(){
   if(formType==='custom'){const pal=gel('cPalette').value.trim(),fl=gel('cFlowers').value.trim();return (pal||fl)?{type:'Custom',det:'Custom — '+pal+' / '+fl,val:v}:null;}
   if(formType==='vase'){const vf=gel('vFlowers').value.trim(),vv=gel('vVase').value.trim();return (vf||vv)?{type:'Vase Arrangement',det:'Vase — '+vf+(vv?(' in '+vv):''),val:v}:null;}
   if(formType==='loose'){const ls=looseChosen.join(', ')||gel('looseSearch').value.trim();return ls?{type:'Loose Flowers',det:'Loose — '+ls,val:v}:null;}
+  if(formType==='subscription'){const pl=gel('sPlan').value.trim(),fl=gel('sFlowers').value.trim();return (pl||fl)?{type:'Subscription',det:'Subscription — '+pl+(fl?(' / '+fl):''),val:v}:null;}
   return null;
 }
 function clearComposer(){
   setFormType('catalogue');looseChosen=[];gel('looseChosen').textContent='';gel('autofill').textContent='';
-  ['prodSearch','cPalette','cFlowers','vFlowers','vVase','looseSearch','itemVal'].forEach(id=>gel(id).value='');
+  ['prodSearch','cPalette','cFlowers','vFlowers','vVase','looseSearch','sPlan','sFlowers','itemVal'].forEach(id=>gel(id).value='');
 }
 function addComposerItem(silent){
   const it=composerRead();
@@ -1004,12 +1007,13 @@ function orderTotals(){
   let off=orderDiscount?(orderDiscount.type==='pct'?Math.round(subtotal*(Number(orderDiscount.value)||0)/100):(Number(orderDiscount.value)||0)):0;
   off=Math.max(0,Math.min(off,subtotal));
   const delivery=Math.max(0,Number(orderDelivery)||0);
-  return {subtotal,off,delivery,total:subtotal-off+delivery};
+  const polaroid=document.getElementById('fPolaroid').checked?POLAROID_FEE:0;
+  return {subtotal,off,delivery,polaroid,total:subtotal-off+delivery+polaroid};
 }
 function renderItems(){
   const box=gel('itemsBlock');
   if(!stagedItems.length){box.innerHTML='<div class="items-empty">No items yet — build one above and tap “Add to order.”</div>';return;}
-  const {subtotal,off,delivery,total}=orderTotals();
+  const {subtotal,off,delivery,polaroid,total}=orderTotals();
   const rows=stagedItems.map((it,i)=>`<div class="item-row"><div class="ir-main"><div class="ir-det">${esc(it.det||it.type||'Item')}</div><div class="ir-type">${esc(typeLabel(it))}</div></div><span class="ir-val">${fmtINR(it.val)}</span><button type="button" class="ir-rm" data-rm="${i}" title="Remove item" aria-label="Remove item">✕</button></div>`).join('');
   let disc, deliv;
   if(orderDiscount){
@@ -1038,6 +1042,7 @@ function renderItems(){
       <div class="price-line"><span>Subtotal</span><span class="pv">${fmtINR(subtotal)}</span></div>
       ${disc}
       ${deliv}
+      ${polaroid?`<div class="price-line"><span>📷 Polaroid</span><span class="pv">${fmtINR(polaroid)}</span></div>`:''}
       <div class="price-line total"><span>Order total</span><span class="pv">${fmtINR(total)}</span></div>
     </div>`;
   box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{stagedItems.splice(+b.dataset.rm,1);renderItems();});
@@ -1050,6 +1055,7 @@ function renderItems(){
   const delrm=box.querySelector('[data-delrm]');if(delrm)delrm.onclick=()=>{orderDelivery=null;renderItems();};
 }
 gel('addItemBtn').onclick=()=>addComposerItem(false);
+document.getElementById('fPolaroid').onchange=()=>renderItems();
 function toggleNoField(){
   const src=document.getElementById('fSrc').value,fNo=document.getElementById('fNo'),hint=document.getElementById('fNoHint');
   if(editId!==null) return;
@@ -1074,7 +1080,8 @@ function openEdit(id){
   const o=byId(id);if(!o)return;editId=id;
   document.getElementById('formTitle').textContent='Edit order';document.getElementById('formOno').textContent='Order '+o.no;
   clearComposer();stagedItems=orderItems(o).map(x=>({type:x.type||'Bouquet',det:x.det||x.type||'',val:Number(x.val)||0}));
-  orderDiscount=o.discount?{type:o.discount.type,value:o.discount.value}:null;orderDelivery=(Number(o.delivery)||0)>0?Number(o.delivery):null;renderItems();
+  orderDiscount=o.discount?{type:o.discount.type,value:o.discount.value}:null;orderDelivery=(Number(o.delivery)||0)>0?Number(o.delivery):null;
+  document.getElementById('fPolaroid').checked=!!o.polaroid;renderItems();
   const fNo=document.getElementById('fNo');fNo.readOnly=false;fNo.value=o.no||'';document.getElementById('fNoHint').textContent='';
   document.getElementById('fCust').value=o.cust||'';document.getElementById('fPhone').value=o.phone||'';
   document.getElementById('fOd').value=o.od||rangeFrom;document.getElementById('fDd').value=o.dd||rangeFrom;
@@ -1085,7 +1092,7 @@ function openEdit(id){
   const times=[...document.querySelectorAll('#fTime option')].map(x=>x.value);
   document.querySelector('#fTime').value=times.find(v=>o.time&&v.startsWith(o.time.split(' ')[0]))||'Afternoon (1pm–4pm)';
   document.getElementById('fAddr').value=o.addr||'';document.getElementById('fNote').value=o.note||'';document.getElementById('fRemarks').value=o.remarks||'';
-  document.getElementById('fPolaroid').checked=!!o.polaroid;document.getElementById('fUrgent').checked=!!o.urgent;
+  document.getElementById('fUrgent').checked=!!o.urgent;
   openSheet('scrim');
 }
 function closeForm(){closeSheet('scrim');}
