@@ -1106,7 +1106,8 @@ function wireCombo(inputId,listId,itemsRef,onPick){
 }
 wireCombo('prodSearch','prodList',()=>CATALOG,p=>{document.getElementById('prodSearch').value=p.name;document.getElementById('itemVal').value=p.price||'';document.getElementById('autofill').textContent=p.flowers?'✿ '+p.flowers:'';});
 wireCombo('vVase','vaseList',VASES,v=>{document.getElementById('vVase').value=v.name;});
-wireCombo('looseSearch','looseList',()=>LOOSE,l=>{looseChosen.push(l.name);document.getElementById('looseChosen').textContent='✿ '+looseChosen.join(', ');document.getElementById('looseSearch').value='';});
+function looseSum(){return looseChosen.reduce((s,nm)=>{const f=LOOSE.find(x=>x.name===nm);return s+((f&&f.price)||0);},0);}
+wireCombo('looseSearch','looseList',()=>LOOSE,l=>{looseChosen.push(l.name);document.getElementById('looseChosen').textContent='✿ '+looseChosen.map(nm=>{const f=LOOSE.find(x=>x.name===nm);return nm+((f&&f.price)?` (${fmtINR(f.price)})`:'');}).join(', ');document.getElementById('looseSearch').value='';document.getElementById('itemVal').value=looseSum()||'';});
 
 document.getElementById('saveAdd').onclick=async()=>{
   const cust=document.getElementById('fCust').value.trim();
