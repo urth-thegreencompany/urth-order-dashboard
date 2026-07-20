@@ -149,6 +149,13 @@
   .combo-list div span{color:var(--green-soft); font-size:13px}
   .autofill{font-size:12.5px; color:var(--green-soft); margin-top:6px; min-height:16px; font-style:italic}
   .additem{width:100%; padding:11px}
+  .compose-actions{display:grid; grid-template-columns:1fr auto; gap:10px 12px; align-items:end; margin-top:2px}
+  .compose-actions>div:last-child{grid-column:1 / -1}
+  .qtybox{display:flex; align-items:center; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff}
+  .qtybox input{width:46px; text-align:center; border:none; border-radius:0; padding:10px 2px; -moz-appearance:textfield}
+  .qtybox input::-webkit-outer-spin-button,.qtybox input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
+  .qtybtn{border:none; background:var(--cream-2); color:var(--green); font-size:18px; font-weight:800; width:40px; padding:10px 0; cursor:pointer; line-height:1}
+  .qtybtn:hover{background:#E4EADF}
   .items-block{margin:14px 0 4px}
   .items-empty{font-size:13px; color:var(--green-soft); font-style:italic; padding:10px 12px; border:1px dashed var(--line); border-radius:12px; text-align:center}
   .items-list{display:flex; flex-direction:column; gap:7px}
@@ -157,8 +164,13 @@
   .item-row .ir-det{font-size:13.5px; color:var(--green); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .item-row .ir-type{font-size:10px; font-weight:800; color:var(--green-soft); text-transform:uppercase; letter-spacing:.3px}
   .item-row .ir-val{font-family:var(--serif); font-size:14px; color:var(--green); flex:0 0 auto; font-variant-numeric:tabular-nums}
+  .item-row .ir-qty{display:flex; align-items:center; flex:0 0 auto; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff}
+  .item-row .ir-qty button{border:none; background:var(--cream-2); color:var(--green); font-weight:800; width:26px; height:28px; font-size:15px; cursor:pointer; line-height:1; padding:0}
+  .item-row .ir-qty button:hover{background:#E4EADF}
+  .item-row .ir-qty span{min-width:26px; text-align:center; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums}
   .item-row .ir-rm{flex:0 0 auto; border:none; background:none; color:var(--green-soft); font-size:16px; cursor:pointer; line-height:1; padding:2px 4px; border-radius:6px}
   .item-row .ir-rm:hover{background:#F0E2D6; color:var(--clay)}
+  .qtytag{display:inline-block; background:var(--forest); color:#F4ECE2; font-size:10px; font-weight:800; border-radius:999px; padding:1px 6px; vertical-align:middle}
   .pricing{margin-top:12px; border-top:1px solid var(--line); padding-top:11px}
   .price-line{display:flex; justify-content:space-between; align-items:center; font-size:13.5px; color:var(--green); padding:3px 0}
   .price-line.total{font-family:var(--serif); font-size:17px; font-weight:600; border-top:1px dashed var(--line); margin-top:6px; padding-top:9px}
@@ -491,8 +503,9 @@
         <label>Flower preferences</label><input type="text" id="sFlowers" placeholder="e.g. Seasonal mix, no lilies" />
       </div>
 
-      <div class="grid2" style="align-items:end">
-        <div><label>Item value (₹)</label><input type="number" id="itemVal" placeholder="0" /></div>
+      <div class="compose-actions">
+        <div><label>Value (₹) each</label><input type="number" id="itemVal" placeholder="0" /></div>
+        <div><label>Qty</label><div class="qtybox"><button type="button" class="qtybtn" id="qtyMinus" aria-label="Decrease quantity">−</button><input type="number" id="itemQty" value="1" min="1" inputmode="numeric" /><button type="button" class="qtybtn" id="qtyPlus" aria-label="Increase quantity">+</button></div></div>
         <div><button type="button" class="btn ghost additem" id="addItemBtn">+ Add to order</button></div>
       </div>
 
@@ -716,9 +729,10 @@ function orderCard(o){
   const cxl=o.status==='cancelled';
   const nx=nextStage(o.status);
   const its=orderItems(o);
+  const qtyTag=q=>((Number(q)||1)>1?` <span class="qtytag">×${Number(q)}</span>`:'');
   const prodHtml=its.length>1
-    ? its.map(it=>`<span class="prod-item">${esc(it.det||it.type||'Item')} <span class="typepill">${esc(typeLabel(it))}</span></span>`).join('')
-    : `${esc(productLine(o))} <span class="typepill">${esc(typeLabel(o))}</span>`;
+    ? its.map(it=>`<span class="prod-item">${esc(it.det||it.type||'Item')}${qtyTag(it.qty)} <span class="typepill">${esc(typeLabel(it))}</span></span>`).join('')
+    : `${esc((its[0]&&its[0].det)||productLine(o))}${qtyTag(its[0]&&its[0].qty)} <span class="typepill">${esc(typeLabel(o))}</span>`;
   const discPill=o.discount?`<span class="disc-pill">${o.discount.type==='pct'?esc(o.discount.value)+'% off':'−'+esc(fmtINR(o.discount.value))}</span>`:'';
   const delivPill=(Number(o.delivery)||0)>0?`<span class="deliv-pill">🛵 ${esc(fmtINR(o.delivery))} delivery</span>`:'';
   return `<div class="${cls}" data-id="${o.id}">
@@ -984,18 +998,21 @@ function setFormType(t){formType=t;const sel=document.getElementById('typeSel');
 document.getElementById('typeSel').onchange=e=>setFormType(e.target.value);
 
 /* ----- item composer (build one item from the active field group) ----- */
+const readQty=()=>Math.max(1,Math.round(Number(gel('itemQty').value)||1));
 function composerRead(){
-  const v=Number(gel('itemVal').value)||0;
-  if(formType==='catalogue'){const p=gel('prodSearch').value.trim();return p?{type:'Bouquet',det:p,val:v}:null;}
-  if(formType==='custom'){const pal=gel('cPalette').value.trim(),fl=gel('cFlowers').value.trim();return (pal||fl)?{type:'Custom',det:'Custom — '+pal+' / '+fl,val:v}:null;}
-  if(formType==='vase'){const vf=gel('vFlowers').value.trim(),vv=gel('vVase').value.trim();return (vf||vv)?{type:'Vase Arrangement',det:'Vase — '+vf+(vv?(' in '+vv):''),val:v}:null;}
-  if(formType==='loose'){const ls=looseChosen.join(', ')||gel('looseSearch').value.trim();return ls?{type:'Loose Flowers',det:'Loose — '+ls,val:v}:null;}
-  if(formType==='subscription'){const pl=gel('sPlan').value.trim(),fl=gel('sFlowers').value.trim();return (pl||fl)?{type:'Subscription',det:'Subscription — '+pl+(fl?(' / '+fl):''),val:v}:null;}
-  return null;
+  const v=Number(gel('itemVal').value)||0, qty=readQty();
+  let base=null;
+  if(formType==='catalogue'){const p=gel('prodSearch').value.trim();base=p?{type:'Bouquet',det:p,val:v}:null;}
+  else if(formType==='custom'){const pal=gel('cPalette').value.trim(),fl=gel('cFlowers').value.trim();base=(pal||fl)?{type:'Custom',det:'Custom — '+pal+' / '+fl,val:v}:null;}
+  else if(formType==='vase'){const vf=gel('vFlowers').value.trim(),vv=gel('vVase').value.trim();base=(vf||vv)?{type:'Vase Arrangement',det:'Vase — '+vf+(vv?(' in '+vv):''),val:v}:null;}
+  else if(formType==='loose'){const ls=looseChosen.join(', ')||gel('looseSearch').value.trim();base=ls?{type:'Loose Flowers',det:'Loose — '+ls,val:v}:null;}
+  else if(formType==='subscription'){const pl=gel('sPlan').value.trim(),fl=gel('sFlowers').value.trim();base=(pl||fl)?{type:'Subscription',det:'Subscription — '+pl+(fl?(' / '+fl):''),val:v}:null;}
+  return base?{...base,qty}:null;
 }
 function clearComposer(){
   setFormType('catalogue');looseChosen=[];gel('looseChosen').textContent='';gel('autofill').textContent='';
   ['prodSearch','cPalette','cFlowers','vFlowers','vVase','looseSearch','sPlan','sFlowers','itemVal'].forEach(id=>gel(id).value='');
+  gel('itemQty').value=1;
 }
 function addComposerItem(silent){
   const it=composerRead();
@@ -1003,7 +1020,7 @@ function addComposerItem(silent){
   stagedItems.push(it);clearComposer();renderItems();return true;
 }
 function orderTotals(){
-  const subtotal=stagedItems.reduce((s,i)=>s+(Number(i.val)||0),0);
+  const subtotal=stagedItems.reduce((s,i)=>s+(Number(i.val)||0)*(Number(i.qty)||1),0);
   let off=orderDiscount?(orderDiscount.type==='pct'?Math.round(subtotal*(Number(orderDiscount.value)||0)/100):(Number(orderDiscount.value)||0)):0;
   off=Math.max(0,Math.min(off,subtotal));
   const delivery=Math.max(0,Number(orderDelivery)||0);
@@ -1014,7 +1031,7 @@ function renderItems(){
   const box=gel('itemsBlock');
   if(!stagedItems.length){box.innerHTML='<div class="items-empty">No items yet — build one above and tap “Add to order.”</div>';return;}
   const {subtotal,off,delivery,polaroid,total}=orderTotals();
-  const rows=stagedItems.map((it,i)=>`<div class="item-row"><div class="ir-main"><div class="ir-det">${esc(it.det||it.type||'Item')}</div><div class="ir-type">${esc(typeLabel(it))}</div></div><span class="ir-val">${fmtINR(it.val)}</span><button type="button" class="ir-rm" data-rm="${i}" title="Remove item" aria-label="Remove item">✕</button></div>`).join('');
+  const rows=stagedItems.map((it,i)=>{const q=Number(it.qty)||1;return `<div class="item-row"><div class="ir-main"><div class="ir-det">${esc(it.det||it.type||'Item')}</div><div class="ir-type">${esc(typeLabel(it))}${q>1?' · '+esc(fmtINR(it.val))+' each':''}</div></div><div class="ir-qty"><button type="button" data-dec="${i}" aria-label="Decrease quantity">−</button><span>${q}</span><button type="button" data-inc="${i}" aria-label="Increase quantity">+</button></div><span class="ir-val">${fmtINR((Number(it.val)||0)*q)}</span><button type="button" class="ir-rm" data-rm="${i}" title="Remove item" aria-label="Remove item">✕</button></div>`;}).join('');
   let disc, deliv;
   if(orderDiscount){
     disc=`<div class="disc-ctl">
@@ -1046,6 +1063,8 @@ function renderItems(){
       <div class="price-line total"><span>Order total</span><span class="pv">${fmtINR(total)}</span></div>
     </div>`;
   box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{stagedItems.splice(+b.dataset.rm,1);renderItems();});
+  box.querySelectorAll('[data-inc]').forEach(b=>b.onclick=()=>{const i=+b.dataset.inc;stagedItems[i].qty=(Number(stagedItems[i].qty)||1)+1;renderItems();});
+  box.querySelectorAll('[data-dec]').forEach(b=>b.onclick=()=>{const i=+b.dataset.dec;stagedItems[i].qty=Math.max(1,(Number(stagedItems[i].qty)||1)-1);renderItems();});
   const addBtn=gel('discAddBtn');if(addBtn)addBtn.onclick=()=>{orderDiscount={type:'amt',value:0};renderItems();};
   box.querySelectorAll('[data-dt]').forEach(b=>b.onclick=()=>{orderDiscount.type=b.dataset.dt;renderItems();});
   const dIn=gel('discInput');if(dIn)dIn.oninput=()=>{orderDiscount.value=Number(dIn.value)||0;const t=orderTotals();box.querySelectorAll('.pv.off')[0]&&(box.querySelectorAll('.pv.off')[0].textContent='−'+fmtINR(t.off));box.querySelector('.price-line.total .pv').textContent=fmtINR(t.total);};
@@ -1055,6 +1074,8 @@ function renderItems(){
   const delrm=box.querySelector('[data-delrm]');if(delrm)delrm.onclick=()=>{orderDelivery=null;renderItems();};
 }
 gel('addItemBtn').onclick=()=>addComposerItem(false);
+gel('qtyMinus').onclick=()=>{gel('itemQty').value=Math.max(1,readQty()-1);};
+gel('qtyPlus').onclick=()=>{gel('itemQty').value=readQty()+1;};
 document.getElementById('fPolaroid').onchange=()=>renderItems();
 function toggleNoField(){
   const src=document.getElementById('fSrc').value,fNo=document.getElementById('fNo'),hint=document.getElementById('fNoHint');
@@ -1079,7 +1100,7 @@ function openEdit(id){
   if(!requireEdit())return;
   const o=byId(id);if(!o)return;editId=id;
   document.getElementById('formTitle').textContent='Edit order';document.getElementById('formOno').textContent='Order '+o.no;
-  clearComposer();stagedItems=orderItems(o).map(x=>({type:x.type||'Bouquet',det:x.det||x.type||'',val:Number(x.val)||0}));
+  clearComposer();stagedItems=orderItems(o).map(x=>({type:x.type||'Bouquet',det:x.det||x.type||'',val:Number(x.val)||0,qty:Math.max(1,Math.round(Number(x.qty)||1))}));
   orderDiscount=o.discount?{type:o.discount.type,value:o.discount.value}:null;orderDelivery=(Number(o.delivery)||0)>0?Number(o.delivery):null;
   document.getElementById('fPolaroid').checked=!!o.polaroid;renderItems();
   const fNo=document.getElementById('fNo');fNo.readOnly=false;fNo.value=o.no||'';document.getElementById('fNoHint').textContent='';
@@ -1114,9 +1135,9 @@ document.getElementById('saveAdd').onclick=async()=>{
   if(composerRead())addComposerItem(true); // fold a filled-but-unadded composer into the order
   if(!stagedItems.length)return toast('Add at least one item to the order.');
   if(!cust)return toast('Add a customer name.');
-  const items=stagedItems.map(x=>({type:x.type,det:x.det,val:Number(x.val)||0}));
+  const items=stagedItems.map(x=>({type:x.type,det:x.det,val:Number(x.val)||0,qty:Math.max(1,Math.round(Number(x.qty)||1))}));
   const {total}=orderTotals();
-  const det=items.map(i=>i.det).join(' + ');
+  const det=items.map(i=>i.det+(i.qty>1?` ×${i.qty}`:'')).join(' + ');
   const type=items.length>1?'Mixed':items[0].type;
   const discount=orderDiscount&&(Number(orderDiscount.value)||0)>0?{type:orderDiscount.type,value:Number(orderDiscount.value)||0}:null;
   const common={cust,phone:document.getElementById('fPhone').value.trim(),det,type,items,discount,delivery:Math.max(0,Number(orderDelivery)||0),val:total,time:document.getElementById('fTime').value,
