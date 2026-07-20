@@ -628,7 +628,7 @@ async function loadAll(){
   NEXT_NO=Math.max(2000,...ORDERS.map(o=>{const n=parseInt(String(o.no||'').replace(/\D/g,''))||0;return n<100000?n:0;}))+1;
   const p=await db.from('products').select('*').order('name');
   CATALOG=(p.data||[]).map(x=>({id:x.id,name:x.name,type:x.type,price:x.price_inr||0,flowers:x.flowers||''}));
-  LOOSE=CATALOG.filter(x=>x.type==='Loose Flower'||x.type==='Foliage').map(x=>({name:x.name,price:x.price}));
+  LOOSE=CATALOG.filter(x=>x.type==='Loose Flower'||x.type==='Foliage').map(x=>({name:x.name,price:x.price,unit:x.flowers||''}));
   const s=await db.from('subscriptions').select('*');
   SUBS=(s.data||[]).map(x=>({id:x.id,client:x.client,type:x.type,day:x.preferred_day,status:x.status,val:x.value_inr||0,prefs:x.flower_prefs||'',last:x.last_delivery,end:x.end_date}));
 }
@@ -951,7 +951,7 @@ function renderProds(){
     <td>${editUnlocked?`<button class="iconbtn" data-del="${i}">Remove</button>`:''}</td></tr>`).join('')}</tbody>`;
   if(!editUnlocked)return;
   bindEditable(t,CATALOG,'products',PRODCOL);
-  t.querySelectorAll('[data-ptype]').forEach(sel=>sel.onchange=()=>{const i=+sel.dataset.ptype;CATALOG[i].type=sel.value;if(CATALOG[i].id)db.from('products').update({type:sel.value}).eq('id',CATALOG[i].id);LOOSE=CATALOG.filter(x=>x.type==='Loose Flower'||x.type==='Foliage').map(x=>({name:x.name,price:x.price}));});
+  t.querySelectorAll('[data-ptype]').forEach(sel=>sel.onchange=()=>{const i=+sel.dataset.ptype;CATALOG[i].type=sel.value;if(CATALOG[i].id)db.from('products').update({type:sel.value}).eq('id',CATALOG[i].id);LOOSE=CATALOG.filter(x=>x.type==='Loose Flower'||x.type==='Foliage').map(x=>({name:x.name,price:x.price,unit:x.flowers||''}));});
   t.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{const i=+b.dataset.del,p=CATALOG[i];if(p.id)await db.from('products').delete().eq('id',p.id);CATALOG.splice(i,1);renderProds();});
 }
 document.getElementById('prodSearchTab').oninput=e=>{prodFilter.q=e.target.value.toLowerCase();renderProds();};
@@ -1100,14 +1100,14 @@ function wireCombo(inputId,listId,itemsRef,onPick){
   const inp=document.getElementById(inputId),list=document.getElementById(listId);
   const getItems=()=>(typeof itemsRef==='function'?itemsRef():itemsRef)||[];
   inp.oninput=()=>{const items=getItems();const q=inp.value.toLowerCase();const m=items.filter(x=>x.name.toLowerCase().includes(q)).slice(0,40);
-    list.innerHTML=m.map(x=>`<div data-v="${esc(x.name)}">${esc(x.name)}<span>${x.price?fmtINR(x.price):''}</span></div>`).join('')||'<div style="color:var(--green-soft)">No match — logged as typed.</div>';
+    list.innerHTML=m.map(x=>`<div data-v="${esc(x.name)}">${esc(x.name)}<span>${x.price?fmtINR(x.price):''}${x.unit?' / '+esc(x.unit):''}</span></div>`).join('')||'<div style="color:var(--green-soft)">No match — logged as typed.</div>';
     list.classList.add('show');list.querySelectorAll('[data-v]').forEach(d=>d.onclick=()=>{onPick(getItems().find(y=>y.name===d.dataset.v));list.classList.remove('show');});};
   inp.onblur=()=>setTimeout(()=>list.classList.remove('show'),150);
 }
 wireCombo('prodSearch','prodList',()=>CATALOG,p=>{document.getElementById('prodSearch').value=p.name;document.getElementById('itemVal').value=p.price||'';document.getElementById('autofill').textContent=p.flowers?'✿ '+p.flowers:'';});
 wireCombo('vVase','vaseList',VASES,v=>{document.getElementById('vVase').value=v.name;});
 function looseSum(){return looseChosen.reduce((s,nm)=>{const f=LOOSE.find(x=>x.name===nm);return s+((f&&f.price)||0);},0);}
-wireCombo('looseSearch','looseList',()=>LOOSE,l=>{looseChosen.push(l.name);document.getElementById('looseChosen').textContent='✿ '+looseChosen.map(nm=>{const f=LOOSE.find(x=>x.name===nm);return nm+((f&&f.price)?` (${fmtINR(f.price)})`:'');}).join(', ');document.getElementById('looseSearch').value='';document.getElementById('itemVal').value=looseSum()||'';});
+wireCombo('looseSearch','looseList',()=>LOOSE,l=>{looseChosen.push(l.name);document.getElementById('looseChosen').textContent='✿ '+looseChosen.map(nm=>{const f=LOOSE.find(x=>x.name===nm);return nm+((f&&f.price)?` (${fmtINR(f.price)}${f.unit?' / '+f.unit:''})`:'');}).join(', ');document.getElementById('looseSearch').value='';document.getElementById('itemVal').value=looseSum()||'';});
 
 document.getElementById('saveAdd').onclick=async()=>{
   const cust=document.getElementById('fCust').value.trim();
