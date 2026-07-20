@@ -11,6 +11,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png" />
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="urth Orders" />
 <title>urth. · Order Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -586,6 +590,7 @@
 const SB_URL='https://zfzofzwngvfjdzjkjolz.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmem9menduZ3ZmamR6amtqb2x6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzY3MTEsImV4cCI6MjA5ODU1MjcxMX0.KqOf4Pfm9TcusCoKroQf2XKfjgR41HUaKUjs0cpMPbw';
 const db = supabase.createClient(SB_URL, SB_KEY);
+const VAPID_PUBLIC='BAwBD72JHp6PPv1owTXjQtAEVk4DJVigqCYLTncccE_Xx2W4jdVFGcFfqHp570QaDTUKRhspynXWOl4TPQawmAM';
 
 /* ===== status meta (color coding) ===== */
 const STATUS_META={
@@ -1221,6 +1226,18 @@ document.getElementById('saveAdd').onclick=async()=>{
 /* ===== realtime ===== */
 /* ===== status-change notifications (in-app toast + OS pop-up) ===== */
 const NOTIFY_LABEL={ready:'Ready',dispatched:'Dispatched',cancelled:'Cancelled'};
+function urlB64ToUint8(b){const pad='='.repeat((4-b.length%4)%4);const s=(b+pad).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(s);const a=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i);return a;}
+async function registerSW(){if(!('serviceWorker' in navigator))return null;try{return await navigator.serviceWorker.register('sw.js');}catch(e){return null;}}
+async function subscribePush(){
+  try{
+    if(!('serviceWorker' in navigator)||!('PushManager' in window)||Notification.permission!=='granted')return;
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToUint8(VAPID_PUBLIC)});
+    const j=sub.toJSON();
+    await db.from('push_subscriptions').upsert({endpoint:j.endpoint,p256dh:j.keys&&j.keys.p256dh,auth:j.keys&&j.keys.auth,ua:navigator.userAgent},{onConflict:'endpoint'});
+  }catch(e){/* push unavailable (e.g. iPhone not installed to Home Screen) — in-app + in-page notifications still work */}
+}
 function refreshNotifyBtn(){
   const b=document.getElementById('notifyBtn');if(!b)return;
   if(!('Notification' in window)||Notification.permission==='granted'){b.style.display='none';return;}
@@ -1232,9 +1249,10 @@ function initNotifyBtn(){
     if(!('Notification' in window))return toast('This browser doesn’t support notifications.');
     if(Notification.permission==='denied')return toast('Alerts are blocked — turn them on in your browser’s site settings.');
     const p=await Notification.requestPermission();refreshNotifyBtn();
-    if(p==='granted'){try{new Notification('urth · alerts on',{body:'You’ll get a pop-up on Ready, Dispatched & Cancelled.',icon:'assets/favicon-192.png'});}catch(e){}toast('🔔 Order alerts enabled.');}
+    if(p==='granted'){try{new Notification('urth · alerts on',{body:'You’ll get a pop-up on Ready, Dispatched & Cancelled.',icon:'assets/favicon-192.png'});}catch(e){}toast('🔔 Order alerts enabled.');await subscribePush();}
   };
   refreshNotifyBtn();
+  if(Notification.permission==='granted')subscribePush();
 }
 function osNotify(no,cust,label,addr){
   if(!('Notification' in window)||Notification.permission!=='granted')return;
@@ -1301,7 +1319,7 @@ async function startApp(){
   document.getElementById('login').style.display='none';
   applyEditLock();
   document.getElementById('days').innerHTML='<div class="empty">Loading your orders…</div>';
-  await loadAll();syncRange();switchView('home');startRealtime();initNotifyBtn();
+  await loadAll();syncRange();switchView('home');startRealtime();registerSW();initNotifyBtn();
 }
 document.getElementById('liBtn').onclick=async()=>{
   const email=document.getElementById('liEmail').value.trim(),password=document.getElementById('liPass').value;
