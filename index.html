@@ -168,6 +168,8 @@
   .item-row .ir-qty button{border:none; background:var(--cream-2); color:var(--green); font-weight:800; width:26px; height:28px; font-size:15px; cursor:pointer; line-height:1; padding:0}
   .item-row .ir-qty button:hover{background:#E4EADF}
   .item-row .ir-qty span{min-width:26px; text-align:center; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums}
+  .item-row .ir-edit{flex:0 0 auto; border:none; background:none; color:var(--green-soft); font-size:15px; cursor:pointer; line-height:1; padding:2px 4px; border-radius:6px}
+  .item-row .ir-edit:hover{background:#E4EADF; color:var(--green)}
   .item-row .ir-rm{flex:0 0 auto; border:none; background:none; color:var(--green-soft); font-size:16px; cursor:pointer; line-height:1; padding:2px 4px; border-radius:6px}
   .item-row .ir-rm:hover{background:#F0E2D6; color:var(--clay)}
   .qtytag{display:inline-block; background:var(--forest); color:#F4ECE2; font-size:10px; font-weight:800; border-radius:999px; padding:1px 6px; vertical-align:middle}
@@ -1045,6 +1047,27 @@ function addComposerItem(silent){
   if(!it){if(!silent)toast('Fill in an item first, then tap “Add to order.”');return false;}
   stagedItems.push(it);clearComposer();renderItems();return true;
 }
+/* pull a staged item back into the composer to edit it, then re-add */
+function editStagedItem(i){
+  const it=stagedItems[i];if(!it)return;
+  const map={'Bouquet':'catalogue','Custom':'custom','Vase Arrangement':'vase','Vase':'vaseplanter','Loose Flowers':'loose','Dry Flowers':'dry','Plant':'plants','Subscription':'subscription'};
+  const t=map[it.type]||'catalogue', d=it.det||'';
+  const strip=(s,p)=>s.startsWith(p)?s.slice(p.length):s;
+  clearComposer();setFormType(t);
+  if(t==='catalogue'){gel('prodSearch').value=d;}
+  else if(t==='vaseplanter'){gel('vpSearch').value=d;}
+  else if(t==='dry'){gel('drySearch').value=strip(d,'Dry — ');}
+  else if(t==='plants'){gel('plantSearch').value=strip(d,'Plant — ');}
+  else if(t==='loose'){looseChosen=strip(d,'Loose — ').split(', ').filter(Boolean);
+    gel('looseChosen').textContent=looseChosen.length?('✿ '+looseChosen.map(nm=>{const f=LOOSE.find(x=>x.name===nm);return nm+((f&&f.price)?` (${fmtINR(f.price)}${f.unit?' / '+f.unit:''})`:'');}).join(', ')):'';}
+  else if(t==='custom'){const p=strip(d,'Custom — ').split(' / ');gel('cPalette').value=p[0]||'';gel('cFlowers').value=p.slice(1).join(' / ');}
+  else if(t==='vase'){const p=strip(d,'Vase — ').split(' in ');gel('vFlowers').value=p[0]||'';gel('vVase').value=p.slice(1).join(' in ');}
+  else if(t==='subscription'){const p=strip(d,'Subscription — ').split(' / ');gel('sPlan').value=p[0]||'';gel('sFlowers').value=p.slice(1).join(' / ');}
+  gel('itemVal').value=it.val||'';gel('itemQty').value=Math.max(1,Math.round(Number(it.qty)||1));
+  stagedItems.splice(i,1);renderItems();
+  const box=gel('itemsBlock');box.scrollIntoView&&box.scrollIntoView({block:'nearest'});
+  toast('Editing item — change it above, then tap “+ Add to order”.');
+}
 function orderTotals(){
   const subtotal=stagedItems.reduce((s,i)=>s+(Number(i.val)||0)*(Number(i.qty)||1),0);
   let off=orderDiscount?(orderDiscount.type==='pct'?Math.round(subtotal*(Number(orderDiscount.value)||0)/100):(Number(orderDiscount.value)||0)):0;
@@ -1057,7 +1080,7 @@ function renderItems(){
   const box=gel('itemsBlock');
   if(!stagedItems.length){box.innerHTML='<div class="items-empty">No items yet — build one above and tap “Add to order.”</div>';return;}
   const {subtotal,off,delivery,polaroid,total}=orderTotals();
-  const rows=stagedItems.map((it,i)=>{const q=Number(it.qty)||1;return `<div class="item-row"><div class="ir-main"><div class="ir-det">${esc(it.det||it.type||'Item')}</div><div class="ir-type">${esc(typeLabel(it))}${q>1?' · '+esc(fmtINR(it.val))+' each':''}</div></div><div class="ir-qty"><button type="button" data-dec="${i}" aria-label="Decrease quantity">−</button><span>${q}</span><button type="button" data-inc="${i}" aria-label="Increase quantity">+</button></div><span class="ir-val">${fmtINR((Number(it.val)||0)*q)}</span><button type="button" class="ir-rm" data-rm="${i}" title="Remove item" aria-label="Remove item">✕</button></div>`;}).join('');
+  const rows=stagedItems.map((it,i)=>{const q=Number(it.qty)||1;return `<div class="item-row"><div class="ir-main"><div class="ir-det">${esc(it.det||it.type||'Item')}</div><div class="ir-type">${esc(typeLabel(it))}${q>1?' · '+esc(fmtINR(it.val))+' each':''}</div></div><div class="ir-qty"><button type="button" data-dec="${i}" aria-label="Decrease quantity">−</button><span>${q}</span><button type="button" data-inc="${i}" aria-label="Increase quantity">+</button></div><span class="ir-val">${fmtINR((Number(it.val)||0)*q)}</span><button type="button" class="ir-edit" data-edit="${i}" title="Edit item" aria-label="Edit item">✎</button><button type="button" class="ir-rm" data-rm="${i}" title="Remove item" aria-label="Remove item">✕</button></div>`;}).join('');
   let disc, deliv;
   if(orderDiscount){
     disc=`<div class="disc-ctl">
@@ -1089,6 +1112,7 @@ function renderItems(){
       <div class="price-line total"><span>Order total</span><span class="pv">${fmtINR(total)}</span></div>
     </div>`;
   box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{stagedItems.splice(+b.dataset.rm,1);renderItems();});
+  box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editStagedItem(+b.dataset.edit));
   box.querySelectorAll('[data-inc]').forEach(b=>b.onclick=()=>{const i=+b.dataset.inc;stagedItems[i].qty=(Number(stagedItems[i].qty)||1)+1;renderItems();});
   box.querySelectorAll('[data-dec]').forEach(b=>b.onclick=()=>{const i=+b.dataset.dec;stagedItems[i].qty=Math.max(1,(Number(stagedItems[i].qty)||1)-1);renderItems();});
   const addBtn=gel('discAddBtn');if(addBtn)addBtn.onclick=()=>{orderDiscount={type:'amt',value:0};renderItems();};
