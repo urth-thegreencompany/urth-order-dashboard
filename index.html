@@ -583,6 +583,23 @@
     <div class="modal-actions"><button class="btn ghost" data-close="editGate">Cancel</button><button class="btn" id="editUnlockBtn">Unlock editing</button></div>
   </div></div>
 
+  <div class="scrim" id="subScrim"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="subFormTitle" style="max-width:460px">
+    <div class="sheet-top"><button class="sheet-back" data-close="subScrim">‹ Back</button><h2 id="subFormTitle">Add subscription</h2></div>
+    <label>Client name</label><input type="text" id="subClient" placeholder="Full name" />
+    <label>Type / plan</label><input type="text" id="subType" placeholder="e.g. Weekly (1 Month), Fortnightly…" />
+    <div class="grid2">
+      <div><label>Preferred day</label><select id="subDay"></select></div>
+      <div><label>Status</label><select id="subStatus"></select></div>
+    </div>
+    <label>Flower preferences</label><input type="text" id="subPrefs" placeholder="e.g. Seasonal mix, no lilies" />
+    <label>Value (₹)</label><input type="number" id="subVal" placeholder="0" />
+    <div class="grid2">
+      <div><label>Start date</label><input type="date" id="subStart" /></div>
+      <div><label>End date</label><input type="date" id="subEnd" /></div>
+    </div>
+    <div class="modal-actions"><button class="btn ghost" id="subCancel">Cancel</button><button class="btn" id="saveSub">Save subscription</button></div>
+  </div></div>
+
   <div class="toast-wrap" id="toasts" role="status" aria-live="polite"></div>
 
 <script>
@@ -965,36 +982,15 @@ const SUBCOL={client:'client',type:'type',day:'preferred_day',prefs:'flower_pref
 const SUB_STATUSES=['On-Going','Paused','Expired'];
 function subFlag(s){if(s.status==='Expired')return '<span class="tag exp">Expired</span>';if(s.status==='Paused')return '<span class="tag soon">Paused</span>';const days=(parseD(s.end||todayISO())-parseD(todayISO()))/(864e5);if(days<=7&&days>=0)return '<span class="tag soon">Expiring</span>';return '<span class="tag on">On-going</span>';}
 function renderSubs(){
-  const t=document.getElementById('subTable'), ce=editUnlocked?'contenteditable':'';
-  const dayCell=(s,i)=>editUnlocked
-    ? `<select class="mini" data-sday="${i}">${WEEK.map(d=>`<option ${s.day===d?'selected':''}>${d}</option>`).join('')}</select>`
-    : esc(s.day);
-  const dateCell=(s,i,k)=>editUnlocked
-    ? `<input type="date" class="mini" data-sdate="${k}" data-i="${i}" value="${esc(s[k]||'')}" />`
-    : (s[k]?shortD(s[k]):'—');
-  const statusCell=(s,i)=>editUnlocked
-    ? `<select class="mini" data-sstatus="${i}">${SUB_STATUSES.map(v=>`<option ${s.status===v?'selected':''}>${v}</option>`).join('')}</select>`
-    : subFlag(s);
+  const t=document.getElementById('subTable');
   t.innerHTML=`<thead><tr><th>Client</th><th>Type</th><th>Day</th><th>Flowers</th><th>Value</th><th>Start</th><th>End</th><th>Status</th><th></th></tr></thead><tbody>${SUBS.map((s,i)=>`<tr>
-    <td ${ce} data-k="client" data-i="${i}"><b>${esc(s.client)}</b></td><td ${ce} data-k="type" data-i="${i}">${esc(s.type)}</td>
-    <td data-i="${i}">${dayCell(s,i)}</td><td ${ce} data-k="prefs" data-i="${i}">${esc(s.prefs)}</td>
-    <td ${ce} data-k="val" data-i="${i}">${fmtINR(s.val)}</td><td data-i="${i}">${dateCell(s,i,'last')}</td>
-    <td data-i="${i}">${dateCell(s,i,'end')}</td><td data-i="${i}">${statusCell(s,i)}</td>
-    <td>${editUnlocked?`<button class="iconbtn" data-subdel="${i}">Delete</button>`:''}</td></tr>`).join('')}</tbody>`;
+    <td><b>${esc(s.client)}</b></td><td>${esc(s.type)}</td>
+    <td>${esc(s.day)}</td><td>${esc(s.prefs)}</td>
+    <td>${fmtINR(s.val)}</td><td>${s.last?shortD(s.last):'—'}</td>
+    <td>${s.end?shortD(s.end):'—'}</td><td>${subFlag(s)}</td>
+    <td>${editUnlocked?`<button class="iconbtn" data-subedit="${i}">Edit</button><button class="iconbtn" data-subdel="${i}">Delete</button>`:''}</td></tr>`).join('')}</tbody>`;
   if(!editUnlocked)return;
-  bindEditable(t,SUBS,'subscriptions',SUBCOL);
-  t.querySelectorAll('[data-sday]').forEach(sel=>sel.onchange=()=>{
-    const i=+sel.dataset.sday;SUBS[i].day=sel.value;
-    if(SUBS[i].id)db.from('subscriptions').update({preferred_day:sel.value}).eq('id',SUBS[i].id);
-  });
-  t.querySelectorAll('[data-sstatus]').forEach(sel=>sel.onchange=()=>{
-    const i=+sel.dataset.sstatus;SUBS[i].status=sel.value;
-    if(SUBS[i].id)db.from('subscriptions').update({status:sel.value}).eq('id',SUBS[i].id);
-  });
-  t.querySelectorAll('[data-sdate]').forEach(inp=>inp.onchange=()=>{
-    const i=+inp.dataset.i,k=inp.dataset.sdate,v=inp.value||null;SUBS[i][k]=v;
-    if(SUBS[i].id)db.from('subscriptions').update({[SUBCOL[k]]:v}).eq('id',SUBS[i].id);
-  });
+  t.querySelectorAll('[data-subedit]').forEach(b=>b.onclick=()=>openSubForm(SUBS[+b.dataset.subedit].id));
   t.querySelectorAll('[data-subdel]').forEach(b=>b.onclick=async()=>{
     const i=+b.dataset.subdel,s=SUBS[i];if(!s)return;
     if(!confirm(`Delete ${s.client}'s subscription? This can't be undone.`))return;
@@ -1004,16 +1000,43 @@ function renderSubs(){
     }catch(e){toast('Delete failed: '+esc(e.message||String(e)));}
   });
 }
-document.getElementById('addSub').onclick=async()=>{
-  if(!requireEdit())return;
-  const row={client:'New client',type:'Weekly (1 Month)',preferred_day:'Monday',status:'On-Going',value_inr:0,flower_prefs:'—'};
+let subEditId=null;
+function openSubForm(id){
+  subEditId=id;
+  const s=id?SUBS.find(x=>x.id===id):null;
+  document.getElementById('subFormTitle').textContent=s?'Edit subscription':'Add subscription';
+  gel('subClient').value=s?s.client:'';
+  gel('subType').value=s?s.type:'';
+  gel('subPrefs').value=s?s.prefs:'';
+  gel('subVal').value=s&&s.val?s.val:'';
+  gel('subStart').value=s?(s.last||''):'';
+  gel('subEnd').value=s?(s.end||''):'';
+  fillSelect('subDay',WEEK,s?s.day:'Monday');
+  fillSelect('subStatus',SUB_STATUSES,s?s.status:'On-Going');
+  openSheet('subScrim');
+  setTimeout(()=>gel('subClient').focus(),60);
+}
+document.getElementById('addSub').onclick=()=>{if(!requireEdit())return;openSubForm(null);};
+document.getElementById('subCancel').onclick=()=>closeSheet('subScrim');
+document.getElementById('saveSub').onclick=async()=>{
+  const client=gel('subClient').value.trim();
+  if(!client)return toast('Add a client name.');
+  const local={client,type:gel('subType').value.trim(),day:gel('subDay').value,prefs:gel('subPrefs').value.trim(),val:Number(gel('subVal').value)||0,last:gel('subStart').value||null,end:gel('subEnd').value||null,status:gel('subStatus').value};
+  const payload={};for(const k in SUBCOL)payload[SUBCOL[k]]=local[k];
   try{
-    const {data,error}=await db.from('subscriptions').insert(row).select().single();
-    if(error)return toast('Add failed: '+esc(error.message));
-    SUBS.unshift({id:data.id,client:data.client,type:data.type,day:data.preferred_day,status:data.status,val:data.value_inr,prefs:data.flower_prefs,last:data.last_delivery,end:data.end_date});
-    renderSubs();
-    toast('Subscription added — edit its details below.');
-  }catch(e){toast('Add failed: '+esc(e.message||String(e)));}
+    if(subEditId){
+      const {error}=await db.from('subscriptions').update(payload).eq('id',subEditId);
+      if(error)return toast('Save failed: '+esc(error.message));
+      const i=SUBS.findIndex(x=>x.id===subEditId);if(i>-1)SUBS[i]={...SUBS[i],...local};
+      toast('Subscription updated.');
+    }else{
+      const {data,error}=await db.from('subscriptions').insert(payload).select().single();
+      if(error)return toast('Save failed: '+esc(error.message));
+      SUBS.unshift({id:data.id,...local});
+      toast('Subscription added.');
+    }
+    renderSubs();closeSheet('subScrim');
+  }catch(e){toast('Save failed: '+esc(e.message||String(e)));}
 };
 
 /* ===== PRODUCTS ===== */
