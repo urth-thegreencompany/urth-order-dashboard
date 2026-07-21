@@ -606,8 +606,34 @@
 /* ===== Supabase connection ===== */
 const SB_URL='https://zfzofzwngvfjdzjkjolz.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmem9menduZ3ZmamR6amtqb2x6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzY3MTEsImV4cCI6MjA5ODU1MjcxMX0.KqOf4Pfm9TcusCoKroQf2XKfjgR41HUaKUjs0cpMPbw';
-const db = supabase.createClient(SB_URL, SB_KEY);
+/* Staff often leave a tab open for hours; while backgrounded (esp. on mobile) the
+   SDK's auto-refresh timer can stall, so the access token goes stale. Wrapping fetch
+   lets us silently refresh + retry once on a 401/expired-JWT instead of surfacing the
+   error to whoever happens to tap Save next. */
+async function authFetch(input,init){
+  init=init||{};
+  let res=await fetch(input,init);
+  const url=typeof input==='string'?input:(input&&input.url)||'';
+  if(res.status===401&&!/\/auth\/v1\//.test(url)){
+    let body='';try{body=await res.clone().text();}catch(e){}
+    if(/jwt|expired|pgrst301/i.test(body)){
+      try{
+        const {data}=await db.auth.refreshSession();
+        const token=data&&data.session&&data.session.access_token;
+        if(token){
+          const headers=new Headers(init.headers||{});headers.set('Authorization','Bearer '+token);
+          res=await fetch(input,{...init,headers});
+        }
+      }catch(e){}
+    }
+  }
+  return res;
+}
+const db = supabase.createClient(SB_URL, SB_KEY, {global:{fetch:authFetch}});
 const VAPID_PUBLIC='BAwBD72JHp6PPv1owTXjQtAEVk4DJVigqCYLTncccE_Xx2W4jdVFGcFfqHp570QaDTUKRhspynXWOl4TPQawmAM';
+/* Proactively refresh as soon as the tab/PWA comes back to the foreground, so a stale
+   token is fixed before the user's next tap rather than racing it. */
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')db.auth.refreshSession().catch(()=>{});});
 
 /* ===== status meta (color coding) ===== */
 const STATUS_META={
