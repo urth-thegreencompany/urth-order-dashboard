@@ -101,7 +101,7 @@
   .addr{font-size:12.5px; color:var(--ink); margin-top:8px; background:#EFE6D9; border-radius:10px; padding:8px 10px; display:none}
   .addr.show{display:block}
   .card-actions{display:flex; align-items:center; gap:7px; margin-top:11px; flex-wrap:wrap}
-  select.mini{font-family:var(--sans); font-size:12.5px; font-weight:700; border:1px solid var(--line); border-radius:9px; padding:6px 8px; background:#fff; color:var(--green)}
+  select.mini,input.mini{font-family:var(--sans); font-size:12.5px; font-weight:700; border:1px solid var(--line); border-radius:9px; padding:6px 8px; background:#fff; color:var(--green)}
   .iconbtn{border:1px solid var(--line); background:#fff; border-radius:9px; padding:6px 9px; font-size:12.5px; font-weight:700; color:var(--green-soft)}
   .iconbtn.on{background:var(--urgent); color:#fff; border-color:var(--urgent)}
   .maker-tag{font-size:12px}
@@ -673,6 +673,7 @@ async function loadAll(){
   CATALOG=(p.data||[]).map(x=>({id:x.id,name:x.name,type:x.type,price:x.price_inr||0,flowers:x.flowers||''}));
   LOOSE=computeLoose();
   const s=await db.from('subscriptions').select('*');
+  if(s.error)toast('Subscriptions failed to load: '+esc(s.error.message));
   SUBS=(s.data||[]).map(x=>({id:x.id,client:x.client,type:x.type,day:x.preferred_day,status:x.status,val:x.value_inr||0,prefs:x.flower_prefs||'',last:x.last_delivery,end:x.end_date}));
 }
 
@@ -964,19 +965,38 @@ const SUBCOL={client:'client',type:'type',day:'preferred_day',prefs:'flower_pref
 function subFlag(s){if(s.status==='Expired')return '<span class="tag exp">Expired</span>';const days=(parseD(s.end||todayISO())-parseD(todayISO()))/(864e5);if(days<=7&&days>=0)return '<span class="tag soon">Expiring</span>';return '<span class="tag on">On-going</span>';}
 function renderSubs(){
   const t=document.getElementById('subTable'), ce=editUnlocked?'contenteditable':'';
-  t.innerHTML=`<thead><tr><th>Client</th><th>Type</th><th>Day</th><th>Flowers</th><th>Value</th><th>Last</th><th>End</th><th>Status</th></tr></thead><tbody>${SUBS.map((s,i)=>`<tr>
+  const dayCell=(s,i)=>editUnlocked
+    ? `<select class="mini" data-sday="${i}">${WEEK.map(d=>`<option ${s.day===d?'selected':''}>${d}</option>`).join('')}</select>`
+    : esc(s.day);
+  const dateCell=(s,i,k)=>editUnlocked
+    ? `<input type="date" class="mini" data-sdate="${k}" data-i="${i}" value="${esc(s[k]||'')}" />`
+    : (s[k]?shortD(s[k]):'—');
+  t.innerHTML=`<thead><tr><th>Client</th><th>Type</th><th>Day</th><th>Flowers</th><th>Value</th><th>Start</th><th>End</th><th>Status</th></tr></thead><tbody>${SUBS.map((s,i)=>`<tr>
     <td ${ce} data-k="client" data-i="${i}"><b>${esc(s.client)}</b></td><td ${ce} data-k="type" data-i="${i}">${esc(s.type)}</td>
-    <td ${ce} data-k="day" data-i="${i}">${esc(s.day)}</td><td ${ce} data-k="prefs" data-i="${i}">${esc(s.prefs)}</td>
-    <td ${ce} data-k="val" data-i="${i}">${fmtINR(s.val)}</td><td ${ce} data-k="last" data-i="${i}">${esc(s.last)}</td>
-    <td ${ce} data-k="end" data-i="${i}">${esc(s.end)}</td><td>${subFlag(s)}</td></tr>`).join('')}</tbody>`;
-  if(editUnlocked) bindEditable(t,SUBS,'subscriptions',SUBCOL);
+    <td data-i="${i}">${dayCell(s,i)}</td><td ${ce} data-k="prefs" data-i="${i}">${esc(s.prefs)}</td>
+    <td ${ce} data-k="val" data-i="${i}">${fmtINR(s.val)}</td><td data-i="${i}">${dateCell(s,i,'last')}</td>
+    <td data-i="${i}">${dateCell(s,i,'end')}</td><td>${subFlag(s)}</td></tr>`).join('')}</tbody>`;
+  if(!editUnlocked)return;
+  bindEditable(t,SUBS,'subscriptions',SUBCOL);
+  t.querySelectorAll('[data-sday]').forEach(sel=>sel.onchange=()=>{
+    const i=+sel.dataset.sday;SUBS[i].day=sel.value;
+    if(SUBS[i].id)db.from('subscriptions').update({preferred_day:sel.value}).eq('id',SUBS[i].id);
+  });
+  t.querySelectorAll('[data-sdate]').forEach(inp=>inp.onchange=()=>{
+    const i=+inp.dataset.i,k=inp.dataset.sdate,v=inp.value||null;SUBS[i][k]=v;
+    if(SUBS[i].id)db.from('subscriptions').update({[SUBCOL[k]]:v}).eq('id',SUBS[i].id);
+  });
 }
 document.getElementById('addSub').onclick=async()=>{
   if(!requireEdit())return;
   const row={client:'New client',type:'Weekly (1 Month)',preferred_day:'Monday',status:'On-Going',value_inr:0,flower_prefs:'—'};
-  const {data,error}=await db.from('subscriptions').insert(row).select().single();
-  if(error)return toast('Add failed: '+esc(error.message));
-  SUBS.unshift({id:data.id,client:data.client,type:data.type,day:data.preferred_day,status:data.status,val:data.value_inr,prefs:data.flower_prefs,last:data.last_delivery,end:data.end_date});renderSubs();
+  try{
+    const {data,error}=await db.from('subscriptions').insert(row).select().single();
+    if(error)return toast('Add failed: '+esc(error.message));
+    SUBS.unshift({id:data.id,client:data.client,type:data.type,day:data.preferred_day,status:data.status,val:data.value_inr,prefs:data.flower_prefs,last:data.last_delivery,end:data.end_date});
+    renderSubs();
+    toast('Subscription added — edit its details below.');
+  }catch(e){toast('Add failed: '+esc(e.message||String(e)));}
 };
 
 /* ===== PRODUCTS ===== */
