@@ -1217,6 +1217,7 @@ function wireCombo(inputId,listId,itemsRef,onPick){
   inp.oninput=()=>{const items=getItems();const q=inp.value.toLowerCase();const m=items.filter(x=>x.name.toLowerCase().includes(q)).slice(0,40);
     list.innerHTML=m.map(x=>`<div data-v="${esc(x.name)}">${esc(x.name)}<span>${x.price?fmtINR(x.price):''}${x.unit?' / '+esc(x.unit):''}</span></div>`).join('')||'<div style="color:var(--green-soft)">No match — logged as typed.</div>';
     list.classList.add('show');list.querySelectorAll('[data-v]').forEach(d=>d.onclick=()=>{onPick(getItems().find(y=>y.name===d.dataset.v));list.classList.remove('show');});};
+  list.onmousedown=e=>e.preventDefault(); // keep focus on the input so a list-item click can't be pre-empted by blur closing the list first
   inp.onblur=()=>setTimeout(()=>list.classList.remove('show'),150);
 }
 wireCombo('prodSearch','prodList',()=>CATALOG,p=>{document.getElementById('prodSearch').value=p.name;document.getElementById('itemVal').value=p.price||'';document.getElementById('autofill').textContent=p.flowers?'✿ '+p.flowers:'';});
