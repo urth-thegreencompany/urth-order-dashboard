@@ -592,7 +592,15 @@
       <div><label>Status</label><select id="subStatus"></select></div>
     </div>
     <label>Flower preferences</label><input type="text" id="subPrefs" placeholder="e.g. Seasonal mix, no lilies" />
-    <label>Value (₹)</label><input type="number" id="subVal" placeholder="0" />
+    <div class="grid2">
+      <div><label>Value (₹) per delivery</label><input type="number" id="subVal" placeholder="0" /></div>
+      <div><label>Delivery charge (₹) per delivery</label><input type="number" id="subDeliv" placeholder="0" /></div>
+    </div>
+    <div class="grid2">
+      <div><label>Frequency</label><select id="subFreq"></select></div>
+      <div><label>Duration (months)</label><input type="number" id="subDur" min="1" value="1" /></div>
+    </div>
+    <p class="hint" id="subTotalHint" style="margin-top:2px"></p>
     <div class="grid2">
       <div><label>Start date</label><input type="date" id="subStart" /></div>
       <div><label>End date</label><input type="date" id="subEnd" /></div>
@@ -717,7 +725,7 @@ async function loadAll(){
   LOOSE=computeLoose();
   const s=await db.from('subscriptions').select('*');
   if(s.error)toast('Subscriptions failed to load: '+esc(s.error.message));
-  SUBS=(s.data||[]).map(x=>({id:x.id,client:x.client,type:x.type,day:x.preferred_day,status:x.status,val:x.value_inr||0,prefs:x.flower_prefs||'',last:x.last_delivery,end:x.end_date}));
+  SUBS=(s.data||[]).map(x=>({id:x.id,client:x.client,type:x.type,day:x.preferred_day,status:x.status,val:x.value_inr||0,prefs:x.flower_prefs||'',last:x.last_delivery,end:x.end_date,freq:x.frequency||'Weekly',dur:x.duration_months||1,deliv:x.delivery_inr||0,total:x.total_inr||0}));
 }
 
 /* ===== helpers ===== */
@@ -1004,15 +1012,20 @@ document.getElementById('calUnlock').onclick=()=>{if(document.getElementById('ca
 document.getElementById('calPass').onkeydown=e=>{if(e.key==='Enter')document.getElementById('calUnlock').click();};
 
 /* ===== SUBSCRIPTIONS ===== */
-const SUBCOL={client:'client',type:'type',day:'preferred_day',prefs:'flower_prefs',val:'value_inr',last:'last_delivery',end:'end_date',status:'status'};
+const SUBCOL={client:'client',type:'type',day:'preferred_day',prefs:'flower_prefs',val:'value_inr',last:'last_delivery',end:'end_date',status:'status',freq:'frequency',dur:'duration_months',deliv:'delivery_inr',total:'total_inr'};
 const SUB_STATUSES=['On-Going','Paused','Expired'];
+const SUB_FREQUENCIES=['Weekly','Fortnightly','Monthly'];
+const FREQ_WEEKS={Weekly:1,Fortnightly:2,Monthly:4};
+/* deliveries assume a 4-week month, so "Fortnightly for 3 months" = 12 weeks / 2 = 6 deliveries */
+function subDeliveries(freq,months){return Math.max(1,Math.round((Number(months)||1)*4/(FREQ_WEEKS[freq]||1)));}
+function subTotal(val,deliv,freq,months){return ((Number(val)||0)+(Number(deliv)||0))*subDeliveries(freq,months);}
 function subFlag(s){if(s.status==='Expired')return '<span class="tag exp">Expired</span>';if(s.status==='Paused')return '<span class="tag soon">Paused</span>';const days=(parseD(s.end||todayISO())-parseD(todayISO()))/(864e5);if(days<=7&&days>=0)return '<span class="tag soon">Expiring</span>';return '<span class="tag on">On-going</span>';}
 function renderSubs(){
   const t=document.getElementById('subTable');
-  t.innerHTML=`<thead><tr><th>Client</th><th>Type</th><th>Day</th><th>Flowers</th><th>Value</th><th>Start</th><th>End</th><th>Status</th><th></th></tr></thead><tbody>${SUBS.map((s,i)=>`<tr>
+  t.innerHTML=`<thead><tr><th>Client</th><th>Type</th><th>Day</th><th>Flowers</th><th>Value</th><th>Total</th><th>Start</th><th>End</th><th>Status</th><th></th></tr></thead><tbody>${SUBS.map((s,i)=>`<tr>
     <td><b>${esc(s.client)}</b></td><td>${esc(s.type)}</td>
     <td>${esc(s.day)}</td><td>${esc(s.prefs)}</td>
-    <td>${fmtINR(s.val)}</td><td>${s.last?shortD(s.last):'—'}</td>
+    <td>${fmtINR(s.val)}</td><td>${fmtINR(s.total)}</td><td>${s.last?shortD(s.last):'—'}</td>
     <td>${s.end?shortD(s.end):'—'}</td><td>${subFlag(s)}</td>
     <td>${editUnlocked?`<button class="iconbtn" data-subedit="${i}">Edit</button><button class="iconbtn" data-subdel="${i}">Delete</button>`:''}</td></tr>`).join('')}</tbody>`;
   if(!editUnlocked)return;
@@ -1026,6 +1039,11 @@ function renderSubs(){
     }catch(e){toast('Delete failed: '+esc(e.message||String(e)));}
   });
 }
+function updateSubTotalHint(){
+  const val=Number(gel('subVal').value)||0,deliv=Number(gel('subDeliv').value)||0,freq=gel('subFreq').value,months=Number(gel('subDur').value)||1;
+  const n=subDeliveries(freq,months),total=subTotal(val,deliv,freq,months);
+  gel('subTotalHint').textContent=`${n} deliver${n===1?'y':'ies'} · Order total ${fmtINR(total)}`;
+}
 let subEditId=null;
 function openSubForm(id){
   subEditId=id;
@@ -1035,19 +1053,25 @@ function openSubForm(id){
   gel('subType').value=s?s.type:'';
   gel('subPrefs').value=s?s.prefs:'';
   gel('subVal').value=s&&s.val?s.val:'';
+  gel('subDeliv').value=s&&s.deliv?s.deliv:'';
+  gel('subDur').value=s&&s.dur?s.dur:1;
   gel('subStart').value=s?(s.last||''):'';
   gel('subEnd').value=s?(s.end||''):'';
   fillSelect('subDay',WEEK,s?s.day:'Monday');
   fillSelect('subStatus',SUB_STATUSES,s?s.status:'On-Going');
+  fillSelect('subFreq',SUB_FREQUENCIES,s?s.freq:'Weekly');
+  updateSubTotalHint();
   openSheet('subScrim');
   setTimeout(()=>gel('subClient').focus(),60);
 }
+['subVal','subDeliv','subFreq','subDur'].forEach(id=>{const el=document.getElementById(id);el.oninput=updateSubTotalHint;el.onchange=updateSubTotalHint;});
 document.getElementById('addSub').onclick=()=>{if(!requireEdit())return;openSubForm(null);};
 document.getElementById('subCancel').onclick=()=>closeSheet('subScrim');
 document.getElementById('saveSub').onclick=async()=>{
   const client=gel('subClient').value.trim();
   if(!client)return toast('Add a client name.');
-  const local={client,type:gel('subType').value.trim(),day:gel('subDay').value,prefs:gel('subPrefs').value.trim(),val:Number(gel('subVal').value)||0,last:gel('subStart').value||null,end:gel('subEnd').value||null,status:gel('subStatus').value};
+  const val=Number(gel('subVal').value)||0,deliv=Number(gel('subDeliv').value)||0,freq=gel('subFreq').value,dur=Number(gel('subDur').value)||1;
+  const local={client,type:gel('subType').value.trim(),day:gel('subDay').value,prefs:gel('subPrefs').value.trim(),val,last:gel('subStart').value||null,end:gel('subEnd').value||null,status:gel('subStatus').value,freq,dur,deliv,total:subTotal(val,deliv,freq,dur)};
   const payload={};for(const k in SUBCOL)payload[SUBCOL[k]]=local[k];
   try{
     if(subEditId){
