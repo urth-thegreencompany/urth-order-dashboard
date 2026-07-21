@@ -962,7 +962,8 @@ document.getElementById('calPass').onkeydown=e=>{if(e.key==='Enter')document.get
 
 /* ===== SUBSCRIPTIONS ===== */
 const SUBCOL={client:'client',type:'type',day:'preferred_day',prefs:'flower_prefs',val:'value_inr',last:'last_delivery',end:'end_date',status:'status'};
-function subFlag(s){if(s.status==='Expired')return '<span class="tag exp">Expired</span>';const days=(parseD(s.end||todayISO())-parseD(todayISO()))/(864e5);if(days<=7&&days>=0)return '<span class="tag soon">Expiring</span>';return '<span class="tag on">On-going</span>';}
+const SUB_STATUSES=['On-Going','Paused','Expired'];
+function subFlag(s){if(s.status==='Expired')return '<span class="tag exp">Expired</span>';if(s.status==='Paused')return '<span class="tag soon">Paused</span>';const days=(parseD(s.end||todayISO())-parseD(todayISO()))/(864e5);if(days<=7&&days>=0)return '<span class="tag soon">Expiring</span>';return '<span class="tag on">On-going</span>';}
 function renderSubs(){
   const t=document.getElementById('subTable'), ce=editUnlocked?'contenteditable':'';
   const dayCell=(s,i)=>editUnlocked
@@ -971,17 +972,24 @@ function renderSubs(){
   const dateCell=(s,i,k)=>editUnlocked
     ? `<input type="date" class="mini" data-sdate="${k}" data-i="${i}" value="${esc(s[k]||'')}" />`
     : (s[k]?shortD(s[k]):'—');
+  const statusCell=(s,i)=>editUnlocked
+    ? `<select class="mini" data-sstatus="${i}">${SUB_STATUSES.map(v=>`<option ${s.status===v?'selected':''}>${v}</option>`).join('')}</select>`
+    : subFlag(s);
   t.innerHTML=`<thead><tr><th>Client</th><th>Type</th><th>Day</th><th>Flowers</th><th>Value</th><th>Start</th><th>End</th><th>Status</th><th></th></tr></thead><tbody>${SUBS.map((s,i)=>`<tr>
     <td ${ce} data-k="client" data-i="${i}"><b>${esc(s.client)}</b></td><td ${ce} data-k="type" data-i="${i}">${esc(s.type)}</td>
     <td data-i="${i}">${dayCell(s,i)}</td><td ${ce} data-k="prefs" data-i="${i}">${esc(s.prefs)}</td>
     <td ${ce} data-k="val" data-i="${i}">${fmtINR(s.val)}</td><td data-i="${i}">${dateCell(s,i,'last')}</td>
-    <td data-i="${i}">${dateCell(s,i,'end')}</td><td>${subFlag(s)}</td>
+    <td data-i="${i}">${dateCell(s,i,'end')}</td><td data-i="${i}">${statusCell(s,i)}</td>
     <td>${editUnlocked?`<button class="iconbtn" data-subdel="${i}">Delete</button>`:''}</td></tr>`).join('')}</tbody>`;
   if(!editUnlocked)return;
   bindEditable(t,SUBS,'subscriptions',SUBCOL);
   t.querySelectorAll('[data-sday]').forEach(sel=>sel.onchange=()=>{
     const i=+sel.dataset.sday;SUBS[i].day=sel.value;
     if(SUBS[i].id)db.from('subscriptions').update({preferred_day:sel.value}).eq('id',SUBS[i].id);
+  });
+  t.querySelectorAll('[data-sstatus]').forEach(sel=>sel.onchange=()=>{
+    const i=+sel.dataset.sstatus;SUBS[i].status=sel.value;
+    if(SUBS[i].id)db.from('subscriptions').update({status:sel.value}).eq('id',SUBS[i].id);
   });
   t.querySelectorAll('[data-sdate]').forEach(inp=>inp.onchange=()=>{
     const i=+inp.dataset.i,k=inp.dataset.sdate,v=inp.value||null;SUBS[i][k]=v;
