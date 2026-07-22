@@ -280,7 +280,7 @@
   body.locked #addBtn, body.locked .fab, body.locked #addSub, body.locked #addProd, body.locked #uploadCsv,
   body.locked .stepper, body.locked .advbtn,
   body.locked [data-maker], body.locked [data-urg], body.locked [data-resc],
-  body.locked [data-cxl], body.locked [data-restore], body.locked [data-edit], body.locked [data-adv]{display:none!important}
+  body.locked [data-cxl], body.locked [data-restore], body.locked [data-edit], body.locked [data-adv], body.locked [data-del]{display:none!important}
   body.locked .card-actions:empty{display:none}
   .botnav{display:none}
   .fab{display:none}
@@ -854,6 +854,7 @@ function orderCard(o){
       ${cxl?`<button class="iconbtn" data-restore="${o.id}">Restore</button>`
            :`<button class="iconbtn" data-resc="${o.id}">Reschedule</button><button class="iconbtn danger" data-cxl="${o.id}">Cancel</button>`}
       <button class="iconbtn" data-edit="${o.id}">Edit</button>
+      <button class="iconbtn danger" data-del="${o.id}">🗑 Delete</button>
     </div>
   </div>`;
 }
@@ -955,6 +956,7 @@ function bindCards(){
   document.querySelectorAll('[data-resc]').forEach(b=>b.onclick=()=>openReschedule(+b.dataset.resc));
   document.querySelectorAll('[data-cxl]').forEach(b=>b.onclick=()=>confirmCancel(b,+b.dataset.cxl));
   document.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.restore,'new'));
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>confirmDelete(b,+b.dataset.del));
 }
 function renderCurrent(){if(currentView==='home')renderHome();else if(currentView==='calendar'&&calUnlocked)renderCalendar();else if(currentView==='subs')renderSubs();else if(currentView==='products')renderProds();}
 
@@ -977,6 +979,21 @@ function confirmCancel(btn,id){
   if(!editUnlocked)return;
   if(cxlArmed!==id){cxlArmed=id;btn.textContent='Tap again to cancel';btn.classList.add('on');setTimeout(()=>{if(cxlArmed===id){cxlArmed=null;renderCurrent();}},3000);return;}
   cxlArmed=null;changeStatus(id,'cancelled');
+}
+/* Delete is permanent (unlike Cancel, which just changes status) — requires the same
+   tap-again-within-3s confirmation before it touches the database. */
+let delArmed=null;
+function confirmDelete(btn,id){
+  if(!editUnlocked)return;
+  if(delArmed!==id){delArmed=id;btn.textContent='Tap again to delete';btn.classList.add('on');setTimeout(()=>{if(delArmed===id){delArmed=null;renderCurrent();}},3000);return;}
+  delArmed=null;deleteOrder(id);
+}
+async function deleteOrder(id){
+  const o=byId(id);if(!o)return;
+  const i=ORDERS.findIndex(x=>x.id===id);if(i>=0)ORDERS.splice(i,1);renderCurrent();
+  const {error}=await db.from('orders').delete().eq('id',id);
+  if(error){ORDERS.splice(i,0,o);renderCurrent();toast('Delete failed: '+esc(error.message));}
+  else toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> deleted.`);
 }
 
 /* ===== reschedule ===== */
