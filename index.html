@@ -801,7 +801,14 @@ function renderStatusTabs(){
 }
 
 /* ===== HOME ===== */
-const subsForDay=d=>SUBS.filter(s=>s.day===d&&s.status==='On-Going');
+/* whether a subscription actually has a delivery on this date, per its frequency — not just "day of week matches" */
+function subOccursOn(s,dateISO){
+  if(!s.last)return true; // no start date recorded yet — fall back to showing every matching weekday
+  const days=Math.round((parseD(dateISO)-parseD(s.last))/864e5);
+  if(days<0)return false;
+  return days%((FREQ_WEEKS[s.freq]||1)*7)===0;
+}
+const subsForDay=dateISO=>{const dayName=WEEK[parseD(dateISO).getDay()];return SUBS.filter(s=>s.day===dayName&&s.status==='On-Going'&&subOccursOn(s,dateISO));};
 function orderCard(o){
   const m=STATUS_META[o.status]||STATUS_META.new;
   const cls=['card',o.status,o.urgent?'urgent':''].join(' ');
@@ -867,7 +874,7 @@ function orderRow(o){
 function dayHtml(date){
   const list=ordersOn(date), dayName=WEEK[parseD(date).getDay()];
   const noFilters=statusFilter==='all'&&!makerFilter&&!sourceFilter&&!payFilter;
-  const subs=noFilters?subsForDay(dayName):[];
+  const subs=noFilters?subsForDay(date):[];
   if(!list.length&&!subs.length) return '';
   const active=list.filter(o=>o.status!=='cancelled').length;
   let html=`<div class="day-sec"><div class="day-head"><h2>${fmtDayDate(date)}</h2><span class="cnt">${active} order${active!==1?'s':''}</span></div>`;
