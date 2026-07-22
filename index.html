@@ -502,6 +502,7 @@
         <label>Colour / flowers</label><input type="text" id="vFlowers" placeholder="e.g. White & green — lilies, hydrangea" />
         <label>Vase</label>
         <div class="combo"><input type="text" id="vVase" placeholder="Search vase — e.g. Chrome Vase…" autocomplete="off" /><div class="combo-list" id="vaseList"></div></div>
+        <div class="autofill" id="vaseArrChosen"></div>
       </div>
       <div class="field-group" id="fg-loose">
         <label>Loose flowers</label>
@@ -1158,6 +1159,7 @@ let editId=null, formType='catalogue', looseChosen=[];
 const POLAROID_FEE=150;
 /* multi-item order state: the staged items and an optional order-level discount */
 let stagedItems=[], orderDiscount=null, orderDelivery=null; // orderDelivery: null = no delivery charge; a number (incl. 0) = charge added
+let vaseArrPrice=0; // vase's contribution currently folded into itemVal, for Vase Arrangement (so re-picking a vase swaps it in rather than double-adding)
 const gel=id=>document.getElementById(id);
 function fillSelect(id,opts,val){document.getElementById(id).innerHTML=opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('');}
 function setFormType(t){formType=t;const sel=document.getElementById('typeSel');if(sel.value!==t)sel.value=t;['catalogue','custom','vase','vaseplanter','loose','dry','plants','subscription'].forEach(x=>document.getElementById('fg-'+x).classList.toggle('show',x===t));}
@@ -1179,7 +1181,7 @@ function composerRead(){
   return base?{...base,qty}:null;
 }
 function clearComposer(){
-  setFormType('catalogue');looseChosen=[];gel('looseChosen').textContent='';gel('autofill').textContent='';gel('vpChosen').textContent='';gel('dryChosen').textContent='';gel('plantChosen').textContent='';
+  setFormType('catalogue');looseChosen=[];gel('looseChosen').textContent='';gel('autofill').textContent='';gel('vpChosen').textContent='';gel('dryChosen').textContent='';gel('plantChosen').textContent='';gel('vaseArrChosen').textContent='';vaseArrPrice=0;
   ['prodSearch','cPalette','cFlowers','vFlowers','vVase','looseSearch','sPlan','sFlowers','vpSearch','drySearch','plantSearch','itemVal'].forEach(id=>gel(id).value='');
   gel('itemQty').value=1;
 }
@@ -1202,7 +1204,9 @@ function editStagedItem(i){
   else if(t==='loose'){looseChosen=strip(d,'Loose — ').split(', ').filter(Boolean);
     gel('looseChosen').textContent=looseChosen.length?('✿ '+looseChosen.map(nm=>{const f=LOOSE.find(x=>x.name===nm);return nm+((f&&f.price)?` (${fmtINR(f.price)}${f.unit?' / '+f.unit:''})`:'');}).join(', ')):'';}
   else if(t==='custom'){const p=strip(d,'Custom — ').split(' / ');gel('cPalette').value=p[0]||'';gel('cFlowers').value=p.slice(1).join(' / ');}
-  else if(t==='vase'){const p=strip(d,'Vase — ').split(' in ');gel('vFlowers').value=p[0]||'';gel('vVase').value=p.slice(1).join(' in ');}
+  else if(t==='vase'){const p=strip(d,'Vase — ').split(' in ');gel('vFlowers').value=p[0]||'';const vname=p.slice(1).join(' in ');gel('vVase').value=vname;
+    const match=VASES.find(x=>x.name===vname);vaseArrPrice=match?(match.price||0):0;
+    gel('vaseArrChosen').textContent=match&&match.price?`✔ ${fmtINR(match.price)} vase already included in the item value`:'';}
   else if(t==='subscription'){const p=strip(d,'Subscription — ').split(' / ');gel('sPlan').value=p[0]||'';gel('sFlowers').value=p.slice(1).join(' / ');}
   gel('itemVal').value=it.val||'';gel('itemQty').value=Math.max(1,Math.round(Number(it.qty)||1));
   stagedItems.splice(i,1);renderItems();
@@ -1318,7 +1322,12 @@ function wireCombo(inputId,listId,itemsRef,onPick){
   inp.onblur=()=>setTimeout(()=>list.classList.remove('show'),150);
 }
 wireCombo('prodSearch','prodList',()=>CATALOG,p=>{document.getElementById('prodSearch').value=p.name;document.getElementById('itemVal').value=p.price||'';document.getElementById('autofill').textContent=p.flowers?'✿ '+p.flowers:'';});
-wireCombo('vVase','vaseList',VASES,v=>{document.getElementById('vVase').value=v.name;});
+wireCombo('vVase','vaseList',VASES,v=>{
+  document.getElementById('vVase').value=v.name;
+  const price=v.price||0, val=gel('itemVal'), cur=Number(val.value)||0;
+  val.value=Math.max(0,cur-vaseArrPrice+price)||'';vaseArrPrice=price;
+  gel('vaseArrChosen').textContent=price?`✔ ${fmtINR(price)} vase added to the item value`:'';
+});
 wireCombo('vpSearch','vpList',VASES,v=>{document.getElementById('vpSearch').value=v.name;document.getElementById('itemVal').value=v.price||'';document.getElementById('vpChosen').textContent=v.price?('✔ '+fmtINR(v.price)):'';});
 wireCombo('drySearch','dryList',DRY_SEED,d=>{document.getElementById('drySearch').value=d.name;document.getElementById('itemVal').value=d.price||'';document.getElementById('dryChosen').textContent=(d.price?fmtINR(d.price):'')+(d.unit?' · '+d.unit:'');});
 wireCombo('plantSearch','plantList',PLANT_SEED,p=>{document.getElementById('plantSearch').value=p.name;document.getElementById('itemVal').value=p.price||'';document.getElementById('plantChosen').textContent=p.price?('✔ '+fmtINR(p.price)):'';});
