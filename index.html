@@ -769,9 +769,11 @@ function passFilters(o){
   if(statusFilter!=='all' && o.status!==statusFilter) return false;
   return true;
 }
+/* Default order: cancelled sink to the bottom, urgent pinned to the top, then newest-added
+   first (higher id = added later). Delivery-time slot is the final tiebreaker. */
 const sortOrders=list=>list.sort((a,b)=>{
   const ca=a.status==='cancelled'?1:0, cb=b.status==='cancelled'?1:0;
-  return (ca-cb) || (slotIdx(a.time)-slotIdx(b.time)) || (b.urgent-a.urgent) || (a.id-b.id);
+  return (ca-cb) || (b.urgent-a.urgent) || (b.id-a.id) || (slotIdx(a.time)-slotIdx(b.time));
 });
 function ordersOn(date){
   return sortOrders(ORDERS.filter(o=>o.dd===date&&passFilters(o)));
