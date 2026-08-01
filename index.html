@@ -77,11 +77,14 @@
 
   .board{display:grid; grid-template-columns:1fr 1fr; gap:12px}
   @media(max-width:760px){ .board{grid-template-columns:1fr} }
-  .card{background:var(--cream-2); border:1px solid var(--line); border-left:6px solid var(--line); border-radius:var(--radius); padding:13px 15px; box-shadow:var(--shadow)}
-  .card.prep{border-left-color:var(--amber); background:linear-gradient(0deg,var(--amber-bg),var(--cream-2) 62%)}
-  .card.ready{border-left-color:var(--sky); background:linear-gradient(0deg,var(--sky-bg),var(--cream-2) 62%)}
-  .card.dispatched{border-left-color:var(--leaf); background:linear-gradient(0deg,var(--leaf-bg),var(--cream-2) 62%)}
-  .card.delivered{border-left-color:var(--done); background:linear-gradient(0deg,var(--done-bg),var(--cream-2) 62%)}
+  .card{background:var(--cream-2); border:1px solid var(--line); border-left:7px solid var(--line); border-radius:var(--radius); padding:13px 15px; box-shadow:var(--shadow)}
+  /* Solid, saturated status fills — the stage reads at a glance across any laptop screen */
+  .card.new{border-left-color:#C0965E; background:#ECDDC0}
+  .card.confirmed{border-left-color:#6E9152; background:#D8E6C1}
+  .card.prep{border-left-color:#D9B534; background:#F5E27A}
+  .card.ready{border-left-color:#4E7B9E; background:#C2D7E8}
+  .card.dispatched{border-left-color:#E0883A; background:#F5C08A}
+  .card.delivered{border-left-color:#5E7E45; background:#ADC59A}
   .card.urgent{box-shadow:0 0 0 2px var(--urgent), var(--shadow)}
   .row1{display:flex; align-items:flex-start; justify-content:space-between; gap:8px}
   .cust{font-family:var(--serif); font-size:18px; color:var(--green); font-weight:600}
@@ -106,6 +109,20 @@
   .iconbtn.on{background:var(--urgent); color:#fff; border-color:var(--urgent)}
   .maker-tag{font-size:12px}
   .maker-tag.none{color:var(--clay); font-weight:700}
+  .people{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
+  .ptag{font-size:12px; font-weight:700; padding:3px 10px; border-radius:8px; border:1px solid rgba(15,60,45,.14); background:rgba(255,255,255,.55); color:var(--forest)}
+  .ptag.none{color:var(--clay); background:rgba(255,255,255,.35)}
+  .ptag .k{color:var(--green-soft); font-weight:800; margin-right:5px; text-transform:uppercase; letter-spacing:.3px; font-size:10px}
+  .people-field{margin-top:2px}
+  .lab-hint{font-weight:600; text-transform:none; letter-spacing:0; color:var(--green-soft); font-size:11.5px}
+  .chips{display:flex; flex-wrap:wrap; gap:7px; margin:6px 0 8px; min-height:4px}
+  .chips:empty::after{content:'None in the list yet — add one below.'; color:var(--green-soft); font-size:12.5px; font-style:italic}
+  .chip-sel{font-family:var(--sans); font-size:13px; font-weight:700; border:1px solid var(--line); background:#fff; color:var(--green); border-radius:999px; padding:7px 13px; cursor:pointer; user-select:none; transition:background .12s,color .12s,border-color .12s}
+  .chip-sel.on{background:var(--forest); color:#F4ECE2; border-color:var(--forest)}
+  .addperson{display:flex; gap:8px; align-items:center}
+  .addperson input{flex:1; font-family:var(--sans); font-size:13.5px; border:1px solid var(--line); border-radius:9px; padding:8px 10px; background:#fff; color:var(--ink)}
+  .addbtn{white-space:nowrap; font-family:var(--sans); font-size:13px; font-weight:800; border:1px solid var(--line); background:var(--cream-2); color:var(--green); border-radius:9px; padding:9px 13px; cursor:pointer}
+  .addbtn:active{background:#EFE6D9}
 
   .sub-day{background:#EBF0E7; border:1px dashed var(--leaf); border-radius:var(--radius); padding:13px 15px; margin-bottom:12px}
   .sub-day h3{font-size:15px; color:var(--leaf); display:flex; align-items:center; gap:8px}
@@ -230,7 +247,6 @@
   .ctlink.wa{color:#0B7A45;border-color:#BFE3CE;background:#EAF6EF}
   .ctlink:active{background:var(--cream-2)}
   .remark-line{font-size:12px;color:var(--green-soft);margin-top:6px;font-style:italic}
-  .card.confirmed{border-left-color:#7FA06B;background:linear-gradient(0deg,#E7EEDD,var(--cream-2) 62%)}
   .card.cancelled{border-left-color:#B0A99E;background:#ECE7DF;opacity:.72}
   .card.cancelled .cust{text-decoration:line-through;color:var(--green-soft)}
   .badge.cxl{background:#8A8178;color:#fff}
@@ -244,8 +260,6 @@
   .preset-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
   .chip{border:1.5px solid var(--line);background:#fff;color:var(--green);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
   .chip.on{background:var(--forest);color:#F4ECE2;border-color:var(--forest)}
-  .filterbar-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 2px}
-  .filterbar-row select.mini{padding:8px 10px}
   .head-actions{display:flex;align-items:center;gap:10px}
   .density-toggle{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
   .dbtn{border:none;background:#fff;color:var(--green-soft);padding:7px 11px;font-size:15px;line-height:1;cursor:pointer}
@@ -279,7 +293,7 @@
   .lockbtn.on{background:#E7EFE7;color:var(--leaf);border-color:#BFD8BF}
   body.locked #addBtn, body.locked .fab, body.locked #addSub, body.locked #addProd, body.locked #uploadCsv,
   body.locked .stepper, body.locked .advbtn,
-  body.locked [data-maker], body.locked [data-urg], body.locked [data-resc],
+  body.locked [data-addmaker], body.locked [data-addowner], body.locked [data-urg], body.locked [data-resc],
   body.locked [data-cxl], body.locked [data-restore], body.locked [data-edit], body.locked [data-adv], body.locked [data-del]{display:none!important}
   body.locked .card-actions:empty{display:none}
   .botnav{display:none}
@@ -415,7 +429,6 @@
       </div>
       <div class="kpis" id="kpis"></div>
       <div class="status-tabs" id="statusTabs"></div>
-      <div class="filterbar-row" id="filterBar"></div>
       <div class="sec-head"><h2 id="homeHeading">Upcoming</h2>
         <div class="head-actions"><div class="density-toggle" id="densityToggle"></div><button class="btn" id="addBtn">+ Add order</button></div>
       </div>
@@ -553,9 +566,16 @@
         <div><label>Source</label><select id="fSrc"></select></div>
         <div><label>Transport mode</label><select id="fTrans"></select></div>
       </div>
-      <div class="grid2">
-        <div><label>Payment status</label><select id="fPay"></select></div>
-        <div><label>Bouquet maker</label><select id="fMaker"></select></div>
+      <label>Payment status</label><select id="fPay"></select>
+      <div class="people-field">
+        <label>Makers <span class="lab-hint">tap to select · multiple allowed</span></label>
+        <div class="chips" id="fMakers"></div>
+        <div class="addperson"><input id="fMakerNew" placeholder="Add a new maker" autocomplete="off" /><button type="button" class="addbtn" id="fMakerAdd">＋ Add</button></div>
+      </div>
+      <div class="people-field">
+        <label>Owners <span class="lab-hint">tap to select · multiple allowed</span></label>
+        <div class="chips" id="fOwners"></div>
+        <div class="addperson"><input id="fOwnerNew" placeholder="Add a new owner" autocomplete="off" /><button type="button" class="addbtn" id="fOwnerAdd">＋ Add</button></div>
       </div>
       <label>Delivery address</label><textarea id="fAddr" rows="2" placeholder="Recipient address"></textarea>
       <label>Message note (from customer)</label><textarea id="fNote" rows="2" placeholder="Note to include with the flowers"></textarea>
@@ -646,12 +666,12 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ===== status meta (color coding) ===== */
 const STATUS_META={
-  new:{label:'Not started',color:'#B0895A',bg:'#F1E6D6'},
-  confirmed:{label:'Confirmed',color:'#7FA06B',bg:'#E7EEDD'},
-  prep:{label:'In progress',color:'#D98A3A',bg:'#F6E6CD'},
-  ready:{label:'Ready',color:'#5E86A6',bg:'#DDE7ED'},
-  dispatched:{label:'Dispatched',color:'#4F7C5A',bg:'#DEE9DA'},
-  delivered:{label:'Delivered',color:'#6E8B76',bg:'#E8EDE3'},
+  new:{label:'Not started',color:'#8A5A2A',bg:'#E1CDA6'},
+  confirmed:{label:'Confirmed',color:'#4C6B34',bg:'#C6DBAA'},
+  prep:{label:'In progress',color:'#7A5A12',bg:'#EED45C'},
+  ready:{label:'Ready',color:'#345A78',bg:'#A9C7DE'},
+  dispatched:{label:'Dispatched',color:'#8A4A14',bg:'#F0B074'},
+  delivered:{label:'Delivered',color:'#3B5626',bg:'#98B884'},
   cancelled:{label:'Cancelled',color:'#8A8178',bg:'#ECE7DF'},
 };
 const STAGES=Object.entries(STATUS_META).map(([k,m])=>[k,m.label]);
@@ -660,7 +680,10 @@ const nextStage=s=>{const i=STAGE_FLOW.indexOf(s);return i>=0&&i<STAGE_FLOW.leng
 const SLOT=['Morning','Mid-Morning','Afternoon','Evening'];
 const slotIdx=t=>{if(!t)return 90;const s=String(t).split(' ')[0];const i=SLOT.indexOf(s);return i<0?89:i;};
 
-const MAKERS=['Surjith','Ganesh','Ranjith','Dharma','Dinesh','Rickwin','Pradeep'];
+const MAKERS_SEED=['Surjith','Ganesh','Ranjith','Dharma','Dinesh','Rickwin','Pradeep'];
+/* Makers & owners are a shared, addable roster loaded from the `staff` table (synced across
+   laptops). Until the migration runs, MAKERS falls back to the seed so the app never breaks. */
+let MAKERS=MAKERS_SEED.slice(), OWNERS=[];
 const SOURCES=['Whatsapp','Walk-In','Website','Instagram','Pebble Bay','77 East','Giveaway','No Bill'];
 const TRANSPORT=['2 Wheeler','Scooter(Activa)','Cab','Auto','SUV','Tata Ace','Client Porter','Self Pick Up'];
 const PAYMENTS=['Paid','Pending','Cash Payment','Card Payment','Razorpay Link','No Bill'];
@@ -684,7 +707,7 @@ function addDays(s,n){const p=s.split('-').map(Number);const d=new Date(Date.UTC
 /* ===== live state ===== */
 let ORDERS=[], CATALOG=[], LOOSE=[], SUBS=[];
 let rangeFrom=todayISO(), rangeTo=addDays(todayISO(),3), statusFilter='all';
-let searchQuery='', makerFilter='', sourceFilter='', payFilter='', overdueMode=false;
+let searchQuery='', overdueMode=false;
 let density=localStorage.getItem('urth_density')||'cards';
 let editUnlocked=sessionStorage.getItem('urth_edit')==='1';
 const EDIT_PASS='urth@001122';
@@ -693,8 +716,10 @@ let calY=new Date().getFullYear(), calM=new Date().getMonth();
 const recentLocal=new Set();
 
 /* ===== field mapping ===== */
-const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,phone:r.phone||'',od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,items:Array.isArray(r.items)&&r.items.length?r.items:null,discount:r.discount||null,delivery:r.delivery_inr||0,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,pay:r.payment_status,addr:r.address,status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,remarks:r.remarks||''});
-const toDB=o=>({order_no:o.no,customer_name:o.cust,phone:o.phone||null,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,items:(Array.isArray(o.items)&&o.items.length)?o.items:null,discount:o.discount||null,delivery_inr:o.delivery||0,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:o.maker,payment_status:o.pay,address:o.addr,status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:!!o.polaroid,remarks:o.remarks||null});
+/* makers/owners are jsonb arrays; legacy `maker` text stays as an auto-derived comma-joined summary.
+   Old rows (makers null) read as [maker] so nothing pre-migration disappears. */
+const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,phone:r.phone||'',od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,items:Array.isArray(r.items)&&r.items.length?r.items:null,discount:r.discount||null,delivery:r.delivery_inr||0,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,makers:Array.isArray(r.makers)&&r.makers.length?r.makers:(r.maker?[r.maker]:[]),owners:Array.isArray(r.owners)?r.owners:[],pay:r.payment_status,addr:r.address,status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,remarks:r.remarks||''});
+const toDB=o=>{const makers=Array.isArray(o.makers)?o.makers.filter(Boolean):(o.maker?[o.maker]:[]);const owners=Array.isArray(o.owners)?o.owners.filter(Boolean):[];return{order_no:o.no,customer_name:o.cust,phone:o.phone||null,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,items:(Array.isArray(o.items)&&o.items.length)?o.items:null,discount:o.discount||null,delivery_inr:o.delivery||0,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:makers.join(', ')||null,makers:makers.length?makers:null,owners:owners.length?owners:null,payment_status:o.pay,address:o.addr,status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:!!o.polaroid,remarks:o.remarks||null};};
 /* items accessor: real breakdown if present, else the legacy single-item shape from scalar columns */
 const orderItems=o=>(Array.isArray(o.items)&&o.items.length)?o.items:[{type:o.type,det:o.det,val:o.val}];
 const phoneDigits=p=>String(p||'').replace(/\D/g,'');
@@ -727,14 +752,21 @@ async function loadAll(){
   const s=await db.from('subscriptions').select('*');
   if(s.error)toast('Subscriptions failed to load: '+esc(s.error.message));
   SUBS=(s.data||[]).map(x=>({id:x.id,client:x.client,type:x.type,day:x.preferred_day,status:x.status,val:x.value_inr||0,prefs:x.flower_prefs||'',last:x.last_delivery,end:x.end_date,freq:x.frequency||'Weekly',dur:x.duration_months||1,deliv:x.delivery_inr||0,total:x.total_inr||0}));
+  await loadStaff();
+}
+/* Load the shared maker/owner roster. Missing table (pre-migration) → keep the seeded makers. */
+async function loadStaff(){
+  const {data,error}=await db.from('staff').select('name,role').order('name');
+  if(error||!data)return; // table not there yet; MAKERS keeps its seed, OWNERS stays empty
+  const mk=data.filter(r=>r.role==='maker').map(r=>r.name);
+  const ow=data.filter(r=>r.role==='owner').map(r=>r.name);
+  if(mk.length)MAKERS=mk;
+  OWNERS=ow;
 }
 
 /* ===== helpers ===== */
 function passFilters(o){
   if(statusFilter!=='all' && o.status!==statusFilter) return false;
-  if(makerFilter && o.maker!==makerFilter) return false;
-  if(sourceFilter && !(o.src||'').toLowerCase().includes(sourceFilter.toLowerCase())) return false;
-  if(payFilter && !(o.pay||'').toLowerCase().includes(payFilter.toLowerCase())) return false;
   return true;
 }
 const sortOrders=list=>list.sort((a,b)=>{
@@ -814,7 +846,12 @@ function orderCard(o){
   const m=STATUS_META[o.status]||STATUS_META.new;
   const cls=['card',o.status,o.urgent?'urgent':''].join(' ');
   const flowers=(o.det&&o.det!==o.type)?'':((CATALOG.find(p=>p.name===o.det)||{}).flowers||'');
-  const makerHtml=o.maker?`<span class="maker-tag">Maker: <b>${esc(o.maker)}</b></span>`:`<span class="maker-tag none">Maker: unassigned</span>`;
+  const makers=(o.makers&&o.makers.length)?o.makers:(o.maker?[o.maker]:[]);
+  const owners=o.owners||[];
+  const peopleHtml=`<div class="people">
+      <span class="ptag ${makers.length?'':'none'}"><span class="k">Maker${makers.length>1?'s':''}</span>${makers.length?esc(makers.join(', ')):'unassigned'}</span>
+      ${owners.length?`<span class="ptag"><span class="k">Owner${owners.length>1?'s':''}</span>${esc(owners.join(', '))}</span>`:''}
+    </div>`;
   const waN=waNumber(o.phone);
   const contactHtml=o.phone?`<span class="contact"><a class="ctlink" href="tel:${phoneDigits(o.phone)}">☎ ${esc(o.phone)}</a>${waN?`<a class="ctlink wa" href="https://wa.me/${waN}" target="_blank" rel="noopener">WhatsApp</a>`:''}</span>`:'';
   const cxl=o.status==='cancelled';
@@ -840,8 +877,9 @@ function orderCard(o){
     <div class="meta">
       <span class="val-amt">${fmtINR(o.val)}</span>${discPill}${delivPill}
       ${o.src?`<span class="pill">${esc(o.src)}</span>`:''}${o.trans?`<span>${esc(o.trans)}</span>`:''}
-      <span>${/pending/i.test(o.pay)?'⚠︎ <b>Pending</b>':(o.pay?('✓ '+esc(o.pay)):'')}</span>${makerHtml}${contactHtml}
+      <span>${/pending/i.test(o.pay)?'⚠︎ <b>Pending</b>':(o.pay?('✓ '+esc(o.pay)):'')}</span>${contactHtml}
     </div>
+    ${peopleHtml}
     ${flowers?`<div class="flowers">${esc(flowers)}</div>`:''}
     ${o.note?`<div class="note-line">✎ “${esc(o.note)}”</div>`:''}
     ${o.remarks?`<div class="remark-line">Remarks: ${esc(o.remarks)}</div>`:''}
@@ -849,7 +887,8 @@ function orderCard(o){
     ${cxl?'':`<div class="stepper">${STAGE_FLOW.map((s,i)=>{const sm=STATUS_META[s];const st=i<STAGE_FLOW.indexOf(o.status)?'done':(s===o.status?'cur':'');return `<button class="step ${st}" data-step="${o.id}" data-s="${s}" style="--sc:${sm.color}" title="${sm.label}"><span class="sdot2"></span></button>`;}).join('')}</div>`}
     <div class="card-actions">
       ${nx&&!cxl?`<button class="advbtn" data-adv="${o.id}" data-next="${nx}">Mark ${STATUS_META[nx].label} →</button>`:''}
-      <select class="mini" data-maker="${o.id}"><option value="">Assign maker</option>${MAKERS.map(mk=>`<option ${o.maker===mk?'selected':''}>${mk}</option>`).join('')}</select>
+      <select class="mini" data-addmaker="${o.id}"><option value="">＋ maker</option>${MAKERS.filter(mk=>!makers.includes(mk)).map(mk=>`<option>${esc(mk)}</option>`).join('')}</select>
+      <select class="mini" data-addowner="${o.id}"><option value="">＋ owner</option>${OWNERS.filter(nm=>!owners.includes(nm)).map(nm=>`<option>${esc(nm)}</option>`).join('')}</select>
       <button class="iconbtn ${o.urgent?'on':''}" data-urg="${o.id}" title="Urgent" aria-label="Toggle urgent" aria-pressed="${o.urgent}">⚡</button>
       <button class="iconbtn" data-addr="${o.id}" title="Address" aria-label="Show address">📍</button>
       ${cxl?`<button class="iconbtn" data-restore="${o.id}">Restore</button>`
@@ -875,7 +914,7 @@ function orderRow(o){
 }
 function dayHtml(date){
   const list=ordersOn(date), dayName=WEEK[parseD(date).getDay()];
-  const noFilters=statusFilter==='all'&&!makerFilter&&!sourceFilter&&!payFilter;
+  const noFilters=statusFilter==='all';
   const subs=noFilters?subsForDay(date):[];
   if(!list.length&&!subs.length) return '';
   const active=list.filter(o=>o.status!=='cancelled').length;
@@ -890,20 +929,6 @@ function renderAttention(){
   if(!od.length){host.innerHTML='';return;}
   host.innerHTML=`<button class="attention ${overdueMode?'on':''}" id="attnBtn">⚠︎ <b>${od.length}</b> order${od.length!==1?'s':''} overdue &amp; unresolved<span>${overdueMode?'showing · tap to exit':'tap to review'}</span></button>`;
   document.getElementById('attnBtn').onclick=()=>{overdueMode=!overdueMode;if(overdueMode)clearSearchState();renderHome();};
-}
-function renderFilters(){
-  const host=document.getElementById('filterBar'); if(!host)return;
-  const mk=['',...MAKERS], src=['',...SOURCES], payOpts=['','Paid','Pending','Cash','Card','Razorpay','No Bill'];
-  const active=(makerFilter?1:0)+(sourceFilter?1:0)+(payFilter?1:0);
-  host.innerHTML=`
-    <select class="mini" id="fltMaker">${mk.map(x=>`<option value="${x}" ${makerFilter===x?'selected':''}>${x||'Any maker'}</option>`).join('')}</select>
-    <select class="mini" id="fltSrc">${src.map(x=>`<option value="${x}" ${sourceFilter===x?'selected':''}>${x||'Any source'}</option>`).join('')}</select>
-    <select class="mini" id="fltPay">${payOpts.map(x=>`<option value="${x}" ${payFilter===x?'selected':''}>${x||'Any payment'}</option>`).join('')}</select>
-    ${active?`<button class="btn ghost sm" id="fltClear">Clear filters (${active})</button>`:''}`;
-  document.getElementById('fltMaker').onchange=e=>{makerFilter=e.target.value;renderHome();};
-  document.getElementById('fltSrc').onchange=e=>{sourceFilter=e.target.value;renderHome();};
-  document.getElementById('fltPay').onchange=e=>{payFilter=e.target.value;renderHome();};
-  if(active)document.getElementById('fltClear').onclick=()=>{makerFilter=sourceFilter=payFilter='';renderHome();};
 }
 const PRESETS=[['Today',0],['Next 3 days',2],['This week',6],['This month',29]];
 function renderPresets(){
@@ -923,7 +948,7 @@ function renderDensityToggle(){
 function clearSearchState(){searchQuery='';const el=document.getElementById('orderSearch');if(el)el.value='';}
 function clearSearch(){clearSearchState();renderHome();}
 function renderHome(){
-  renderAttention(); renderKPIs(); renderStatusTabs(); renderFilters(); renderPresets(); renderDensityToggle();
+  renderAttention(); renderKPIs(); renderStatusTabs(); renderPresets(); renderDensityToggle();
   const host=document.getElementById('days'), heading=document.getElementById('homeHeading');
   if(searchQuery.trim()){
     if(heading)heading.textContent='Search results';
@@ -950,7 +975,8 @@ function renderHome(){
 function bindCards(){
   document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.step,b.dataset.s));
   document.querySelectorAll('[data-adv]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.adv,b.dataset.next));
-  document.querySelectorAll('[data-maker]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.maker);if(!o)return;o.maker=s.value;renderCurrent();pushUpdate(o.id,{maker:s.value});if(s.value)toast(`Assigned <b>${esc(s.value)}</b> to ${esc(o.cust)} · ${esc(o.no)}.`);});
+  document.querySelectorAll('[data-addmaker]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.addmaker);if(!o||!s.value)return;o.makers=((o.makers&&o.makers.length)?o.makers:(o.maker?[o.maker]:[])).slice();if(!o.makers.includes(s.value))o.makers.push(s.value);o.maker=o.makers.join(', ');renderCurrent();pushUpdate(o.id,{makers:o.makers,maker:o.maker});toast(`Added maker <b>${esc(s.value)}</b> to ${esc(o.cust)} · ${esc(o.no)}.`);});
+  document.querySelectorAll('[data-addowner]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.addowner);if(!o||!s.value)return;o.owners=(o.owners||[]).slice();if(!o.owners.includes(s.value))o.owners.push(s.value);renderCurrent();pushUpdate(o.id,{owners:o.owners});toast(`Added owner <b>${esc(s.value)}</b> to ${esc(o.cust)} · ${esc(o.no)}.`);});
   document.querySelectorAll('[data-urg]').forEach(b=>b.onclick=()=>{if(!editUnlocked)return;const o=byId(+b.dataset.urg);if(!o)return;o.urgent=!o.urgent;renderCurrent();pushUpdate(o.id,{urgent:o.urgent});});
   document.querySelectorAll('[data-addr]').forEach(b=>b.onclick=()=>document.getElementById('addr-'+b.dataset.addr).classList.toggle('show'));
   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(+b.dataset.edit));
@@ -1162,6 +1188,34 @@ let stagedItems=[], orderDiscount=null, orderDelivery=null; // orderDelivery: nu
 let vaseArrPrice=0; // vase's contribution currently folded into itemVal, for Vase Arrangement (so re-picking a vase swaps it in rather than double-adding)
 const gel=id=>document.getElementById(id);
 function fillSelect(id,opts,val){document.getElementById(id).innerHTML=opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('');}
+/* ---- Makers/Owners multi-select pickers (form) ---- */
+let formMakers=[], formOwners=[];
+function renderChipRow(hostId,roster,sel){
+  const host=document.getElementById(hostId);
+  host.innerHTML=roster.map(n=>`<button type="button" class="chip-sel ${sel.includes(n)?'on':''}" data-nm="${esc(n)}">${esc(n)}</button>`).join('');
+  host.querySelectorAll('[data-nm]').forEach(b=>b.onclick=()=>{const n=b.dataset.nm,i=sel.indexOf(n);if(i>=0)sel.splice(i,1);else sel.push(n);b.classList.toggle('on');});
+}
+function renderPeoplePickers(){renderChipRow('fMakers',MAKERS,formMakers);renderChipRow('fOwners',OWNERS,formOwners);}
+async function addPerson(role,inputId){
+  const inp=document.getElementById(inputId),name=inp.value.trim();
+  if(!name)return;
+  const roster=role==='maker'?MAKERS:OWNERS, sel=role==='maker'?formMakers:formOwners;
+  const existing=roster.find(x=>x.toLowerCase()===name.toLowerCase());
+  const canonical=existing||name;
+  if(!existing){
+    roster.push(name);roster.sort((a,b)=>a.localeCompare(b));
+    const {error}=await db.from('staff').insert({name,role});
+    if(error&&/relation|does not exist|schema cache/i.test(error.message))toast('Added for now — run the staff-table setup SQL to save people permanently.');
+    else if(error&&!/duplicate|unique/i.test(error.message))toast('Could not save '+esc(role)+': '+esc(error.message));
+  }
+  if(!sel.includes(canonical))sel.push(canonical);
+  inp.value='';renderPeoplePickers();
+  toast(`Added <b>${esc(canonical)}</b> as ${esc(role)}.`);
+}
+document.getElementById('fMakerAdd').onclick=()=>addPerson('maker','fMakerNew');
+document.getElementById('fOwnerAdd').onclick=()=>addPerson('owner','fOwnerNew');
+document.getElementById('fMakerNew').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addPerson('maker','fMakerNew');}};
+document.getElementById('fOwnerNew').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addPerson('owner','fOwnerNew');}};
 function setFormType(t){formType=t;const sel=document.getElementById('typeSel');if(sel.value!==t)sel.value=t;['catalogue','custom','vase','vaseplanter','loose','dry','plants','subscription'].forEach(x=>document.getElementById('fg-'+x).classList.toggle('show',x===t));}
 document.getElementById('typeSel').onchange=e=>setFormType(e.target.value);
 
@@ -1286,7 +1340,8 @@ function openAdd(){
   ['fCust','fPhone','fAddr','fNote','fRemarks'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fPolaroid').checked=false;
   fillSelect('fSrc',SOURCES,'Whatsapp');fillSelect('fTrans',TRANSPORT,'2 Wheeler');fillSelect('fPay',PAYMENTS,'Paid');
-  document.getElementById('fMaker').innerHTML='<option value="">Unassigned</option>'+MAKERS.map(m=>`<option>${m}</option>`).join('');
+  formMakers=[];formOwners=[];renderPeoplePickers();
+  document.getElementById('fMakerNew').value='';document.getElementById('fOwnerNew').value='';
   document.getElementById('fOd').value=rangeFrom;document.getElementById('fDd').value=rangeFrom;document.getElementById('fUrgent').checked=false;
   toggleNoField();
   openSheet('scrim');
@@ -1304,7 +1359,10 @@ function openEdit(id){
   fillSelect('fSrc',SOURCES,SOURCES.find(s=>o.src&&o.src.includes(s))||'Whatsapp');
   fillSelect('fTrans',TRANSPORT,TRANSPORT.find(s=>o.trans&&o.trans.includes(s))||'2 Wheeler');
   fillSelect('fPay',PAYMENTS,PAYMENTS.find(s=>o.pay&&o.pay.includes(s))||'Paid');
-  document.getElementById('fMaker').innerHTML='<option value="">Unassigned</option>'+MAKERS.map(m=>`<option ${o.maker===m?'selected':''}>${m}</option>`).join('');
+  formMakers=((o.makers&&o.makers.length)?o.makers:(o.maker?[o.maker]:[])).slice();
+  formOwners=(o.owners||[]).slice();
+  document.getElementById('fMakerNew').value='';document.getElementById('fOwnerNew').value='';
+  renderPeoplePickers();
   const times=[...document.querySelectorAll('#fTime option')].map(x=>x.value);
   document.querySelector('#fTime').value=times.find(v=>o.time&&v.startsWith(o.time.split(' ')[0]))||'Afternoon (1pm–4pm)';
   document.getElementById('fAddr').value=o.addr||'';document.getElementById('fNote').value=o.note||'';document.getElementById('fRemarks').value=o.remarks||'';
@@ -1346,7 +1404,7 @@ document.getElementById('saveAdd').onclick=async()=>{
   const discount=orderDiscount&&(Number(orderDiscount.value)||0)>0?{type:orderDiscount.type,value:Number(orderDiscount.value)||0}:null;
   const common={cust,phone:document.getElementById('fPhone').value.trim(),det,type,items,discount,delivery:Math.max(0,Number(orderDelivery)||0),val:total,time:document.getElementById('fTime').value,
     od:document.getElementById('fOd').value,dd:document.getElementById('fDd').value,src:document.getElementById('fSrc').value,
-    trans:document.getElementById('fTrans').value,pay:document.getElementById('fPay').value,maker:document.getElementById('fMaker').value,
+    trans:document.getElementById('fTrans').value,pay:document.getElementById('fPay').value,makers:formMakers.slice(),owners:formOwners.slice(),maker:formMakers.join(', '),
     addr:document.getElementById('fAddr').value.trim(),note:document.getElementById('fNote').value.trim(),
     remarks:document.getElementById('fRemarks').value.trim(),polaroid:document.getElementById('fPolaroid').checked,
     urgent:document.getElementById('fUrgent').checked};
