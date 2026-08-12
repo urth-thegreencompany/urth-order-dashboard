@@ -44,7 +44,8 @@ orders (
   payment_status text, address text, status order_status default 'new',
   urgent boolean default false, created_at timestamptz default now(),
   message_note text,       -- customer's note to include with the flowers
-  polaroid boolean default false,  -- whether a polaroid photo is requested
+  polaroid boolean default false,  -- auto-derived summary: true when polaroid_qty > 0
+  polaroid_qty integer default 0,  -- how many polaroids are requested (each charged POLAROID_FEE)
   remarks text,            -- internal team notes, not customer-facing
   items jsonb,             -- multi-item breakdown: [{type,det,val},...]; null = legacy single-item
   discount jsonb           -- order-level discount {type:'pct'|'amt', value}; null = none
@@ -82,6 +83,13 @@ RLS: enabled on all three tables, policy = any `authenticated` user can read/wri
   it, repeat; a filled-but-unadded composer is auto-folded in on Save. An **order-level discount**
   (`orders.discount` = `{type:'pct'|'amt', value}`) applies to the whole order, not per item;
   `value_inr` stores the post-discount total so revenue reflects reality.
+- **Polaroids** are a count, not a yes/no: `orders.polaroid_qty` holds how many, and each one adds
+  `POLAROID_FEE` to the order total. The old `polaroid` boolean is kept as an auto-derived summary
+  (`qty > 0`), and rows written before the qty column existed read back as 1 — same
+  "new column + derived legacy summary" pattern as `items`/`value_inr` and `makers`/`maker`.
+  In the form the checkbox is the on/off and a ± stepper next to it sets the count; stepping down
+  to 0 switches it back off. `HAS_POLA_QTY` is probed on load so the app still saves correctly if
+  it deploys before the migration is run.
 - **Urgent** is a boolean toggle (⚡) that visually rings the card and sorts it to the top of
   its delivery-time slot.
 

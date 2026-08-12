@@ -215,6 +215,10 @@
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   .chk{display:flex; align-items:center; gap:9px; margin-top:14px; font-size:14px; font-weight:700; color:var(--green)}
   .chk input{width:auto}
+  .polaqty{display:none; margin-left:auto}
+  .polaqty.show{display:flex}
+  .polaqty input{width:38px; padding:6px 2px; font-size:14px}
+  .polaqty .qtybtn{width:30px; padding:6px 0; font-size:16px}
   .modal-actions{display:flex; gap:10px; margin-top:20px}
   .modal-actions .btn{flex:1; text-align:center}
   .field-group{display:none}
@@ -581,7 +585,7 @@
       <label>Delivery address</label><textarea id="fAddr" rows="2" placeholder="Recipient address"></textarea>
       <label>Message note (from customer)</label><textarea id="fNote" rows="2" placeholder="Note to include with the flowers"></textarea>
       <label>Remarks (internal)</label><textarea id="fRemarks" rows="2" placeholder="Anything the team should know about this order"></textarea>
-      <div class="chk"><input type="checkbox" id="fPolaroid" /><label style="margin:0;text-transform:none;font-size:14px">📷 Include a polaroid</label></div>
+      <div class="chk"><input type="checkbox" id="fPolaroid" /><label style="margin:0;text-transform:none;font-size:14px">📷 Include polaroids</label><div class="qtybox polaqty" id="polaQtyBox"><button type="button" class="qtybtn" id="polaMinus" aria-label="Fewer polaroids">−</button><input type="number" id="fPolaroidQty" value="1" min="1" inputmode="numeric" aria-label="Number of polaroids" /><button type="button" class="qtybtn" id="polaPlus" aria-label="More polaroids">+</button></div></div>
       <div class="chk"><input type="checkbox" id="fUrgent" /><label style="margin:0;text-transform:none;font-size:14px">⚡ Mark as urgent</label></div>
 
       <div class="modal-actions"><button class="btn ghost" id="cancelAdd">Cancel</button><button class="btn" id="saveAdd">Save order</button></div>
@@ -715,12 +719,19 @@ const EDIT_PASS='urth@001122';
 let NEXT_NO=2001, currentView='home', calUnlocked=false;
 let calY=new Date().getFullYear(), calM=new Date().getMonth();
 const recentLocal=new Set();
+/* Probed once on load. Stays false until the polaroid_qty migration has been run, so a dashboard
+   that deploys before the SQL is pasted in still saves fine — it just falls back to the boolean. */
+let HAS_POLA_QTY=false;
 
 /* ===== field mapping ===== */
 /* makers/owners are jsonb arrays; legacy `maker` text stays as an auto-derived comma-joined summary.
    Old rows (makers null) read as [maker] so nothing pre-migration disappears. */
-const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,phone:r.phone||'',od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,items:Array.isArray(r.items)&&r.items.length?r.items:null,discount:r.discount||null,delivery:r.delivery_inr||0,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,makers:Array.isArray(r.makers)&&r.makers.length?r.makers:(r.maker?[r.maker]:[]),owners:Array.isArray(r.owners)?r.owners:[],pay:r.payment_status,addr:r.address,status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,remarks:r.remarks||''});
-const toDB=o=>{const makers=Array.isArray(o.makers)?o.makers.filter(Boolean):(o.maker?[o.maker]:[]);const owners=Array.isArray(o.owners)?o.owners.filter(Boolean):[];return{order_no:o.no,customer_name:o.cust,phone:o.phone||null,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,items:(Array.isArray(o.items)&&o.items.length)?o.items:null,discount:o.discount||null,delivery_inr:o.delivery||0,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:makers.join(', ')||null,makers:makers.length?makers:null,owners:owners.length?owners:null,payment_status:o.pay,address:o.addr,status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:!!o.polaroid,remarks:o.remarks||null};};
+/* polaroid count: `polaroid_qty` is the source of truth; the legacy `polaroid` boolean stays as an
+   auto-derived summary (qty>0) so old rows and anything still reading it keep working. Rows written
+   before the qty column existed read back as 1 when the boolean is true. */
+const polaQtyFromDB=r=>{const q=Math.max(0,Math.round(Number(r.polaroid_qty)||0));return q||(r.polaroid?1:0);};
+const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,phone:r.phone||'',od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,items:Array.isArray(r.items)&&r.items.length?r.items:null,discount:r.discount||null,delivery:r.delivery_inr||0,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,makers:Array.isArray(r.makers)&&r.makers.length?r.makers:(r.maker?[r.maker]:[]),owners:Array.isArray(r.owners)?r.owners:[],pay:r.payment_status,addr:r.address,status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,polaQty:polaQtyFromDB(r),remarks:r.remarks||''});
+const toDB=o=>{const makers=Array.isArray(o.makers)?o.makers.filter(Boolean):(o.maker?[o.maker]:[]);const owners=Array.isArray(o.owners)?o.owners.filter(Boolean):[];const pq=Math.max(0,Math.round(Number(o.polaQty)||0));return{order_no:o.no,customer_name:o.cust,phone:o.phone||null,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,items:(Array.isArray(o.items)&&o.items.length)?o.items:null,discount:o.discount||null,delivery_inr:o.delivery||0,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:makers.join(', ')||null,makers:makers.length?makers:null,owners:owners.length?owners:null,payment_status:o.pay,address:o.addr,status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:pq>0,...(HAS_POLA_QTY?{polaroid_qty:pq}:{}),remarks:o.remarks||null};};
 /* items accessor: real breakdown if present, else the legacy single-item shape from scalar columns */
 const orderItems=o=>(Array.isArray(o.items)&&o.items.length)?o.items:[{type:o.type,det:o.det,val:o.val}];
 const phoneDigits=p=>String(p||'').replace(/\D/g,'');
@@ -744,6 +755,7 @@ function recomputeRepeat(){
   ORDERS.forEach(o=>{const k=phoneDigits(o.phone)||(o.cust||'').toLowerCase();o.repeat=k&&seen.has(k);if(k)seen.add(k);});
 }
 async function loadAll(){
+  const probe=await db.from('orders').select('polaroid_qty').limit(1); HAS_POLA_QTY=!probe.error;
   ORDERS=await fetchAllOrders(); recomputeRepeat();
   /* shop walk-in/WhatsApp sequence is #2xxx; ignore 6-digit Shopify-style numbers so auto-assign stays in the tidy range */
   NEXT_NO=Math.max(2000,...ORDERS.map(o=>{const n=parseInt(String(o.no||'').replace(/\D/g,''))||0;return n<100000?n:0;}))+1;
@@ -888,7 +900,7 @@ function orderCard(o){
       <div><div class="cust">${esc(o.cust)||'—'}</div><div class="ono">${esc(o.no)||'#—'} · ${fmtDayDate(o.dd)}${o.time?' · '+esc(o.time):''}</div></div>
       <div class="badges">
         <span class="statuspill" style="background:${m.bg};color:${m.color}">${m.label}</span>
-        ${o.polaroid?'<span class="badge pola">📷 Polaroid</span>':''}
+        ${o.polaQty?`<span class="badge pola">📷 ${o.polaQty>1?esc(o.polaQty)+' Polaroids':'Polaroid'}</span>`:''}
         ${o.urgent&&!cxl?'<span class="badge urg">⚡ URGENT</span>':''}
         <span class="badge ${o.repeat?'repeat':'new'}">${o.repeat?'REPEAT':'NEW'}</span>
       </div>
@@ -923,7 +935,7 @@ function orderRow(o){
   const nx=nextStage(o.status), cxl=o.status==='cancelled';
   return `<div class="orow ${o.urgent&&!cxl?'urg':''} ${cxl?'cxl':''}" data-id="${o.id}">
     <div class="orow-main">
-      <div class="orow-cust">${o.urgent&&!cxl?'⚡ ':''}${esc(o.cust)||'—'}${o.polaroid?' 📷':''}</div>
+      <div class="orow-cust">${o.urgent&&!cxl?'⚡ ':''}${esc(o.cust)||'—'}${o.polaQty?' 📷'+(o.polaQty>1?'×'+esc(o.polaQty):''):''}</div>
       <div class="orow-sub">${esc(o.no)||'#—'} · ${o.time?esc(o.time.split(' ')[0]):'—'} · ${esc(productLine(o))}</div>
     </div>
     <span class="orow-val">${fmtINR(o.val)}</span>
@@ -1289,18 +1301,28 @@ function editStagedItem(i){
   const box=gel('itemsBlock');box.scrollIntoView&&box.scrollIntoView({block:'nearest'});
   toast('Editing item — change it above, then tap “+ Add to order”.');
 }
+/* Polaroids: the checkbox is the on/off, the stepper next to it is how many. Unchecked reads as 0,
+   checked is always at least 1, and stepping down to 0 switches the whole thing back off. */
+const readPolaQty=()=>gel('fPolaroid').checked?Math.max(1,Math.round(Number(gel('fPolaroidQty').value)||1)):0;
+function setPolaQty(n){
+  const q=Math.max(0,Math.round(Number(n)||0));
+  gel('fPolaroid').checked=q>0;
+  gel('fPolaroidQty').value=Math.max(1,q);
+  gel('polaQtyBox').classList.toggle('show',q>0);
+}
 function orderTotals(){
   const subtotal=stagedItems.reduce((s,i)=>s+(Number(i.val)||0)*(Number(i.qty)||1),0);
   let off=orderDiscount?(orderDiscount.type==='pct'?Math.round(subtotal*(Number(orderDiscount.value)||0)/100):(Number(orderDiscount.value)||0)):0;
   off=Math.max(0,Math.min(off,subtotal));
   const delivery=Math.max(0,Number(orderDelivery)||0);
-  const polaroid=document.getElementById('fPolaroid').checked?POLAROID_FEE:0;
-  return {subtotal,off,delivery,polaroid,total:subtotal-off+delivery+polaroid};
+  const polaQty=readPolaQty();
+  const polaroid=polaQty*POLAROID_FEE;
+  return {subtotal,off,delivery,polaQty,polaroid,total:subtotal-off+delivery+polaroid};
 }
 function renderItems(){
   const box=gel('itemsBlock');
   if(!stagedItems.length){box.innerHTML='<div class="items-empty">No items yet — build one above and tap “Add to order.”</div>';return;}
-  const {subtotal,off,delivery,polaroid,total}=orderTotals();
+  const {subtotal,off,delivery,polaQty,polaroid,total}=orderTotals();
   const rows=stagedItems.map((it,i)=>{const q=Number(it.qty)||1;return `<div class="item-row"><div class="ir-main"><div class="ir-det">${esc(it.det||it.type||'Item')}</div><div class="ir-type">${esc(typeLabel(it))}${q>1?' · '+esc(fmtINR(it.val))+' each':''}</div></div><div class="ir-qty"><button type="button" data-dec="${i}" aria-label="Decrease quantity">−</button><span>${q}</span><button type="button" data-inc="${i}" aria-label="Increase quantity">+</button></div><span class="ir-val">${fmtINR((Number(it.val)||0)*q)}</span><button type="button" class="ir-edit" data-edit="${i}" title="Edit item" aria-label="Edit item">✎</button><button type="button" class="ir-rm" data-rm="${i}" title="Remove item" aria-label="Remove item">✕</button></div>`;}).join('');
   let disc, deliv;
   if(orderDiscount){
@@ -1329,7 +1351,7 @@ function renderItems(){
       <div class="price-line"><span>Subtotal</span><span class="pv">${fmtINR(subtotal)}</span></div>
       ${disc}
       ${deliv}
-      ${polaroid?`<div class="price-line"><span>📷 Polaroid</span><span class="pv">${fmtINR(polaroid)}</span></div>`:''}
+      ${polaroid?`<div class="price-line"><span>📷 Polaroid${polaQty>1?` ×${polaQty}`:''}</span><span class="pv">${fmtINR(polaroid)}</span></div>`:''}
       <div class="price-line total"><span>Order total</span><span class="pv">${fmtINR(total)}</span></div>
     </div>`;
   box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{stagedItems.splice(+b.dataset.rm,1);renderItems();});
@@ -1347,7 +1369,11 @@ function renderItems(){
 gel('addItemBtn').onclick=()=>addComposerItem(false);
 gel('qtyMinus').onclick=()=>{gel('itemQty').value=Math.max(1,readQty()-1);};
 gel('qtyPlus').onclick=()=>{gel('itemQty').value=readQty()+1;};
-document.getElementById('fPolaroid').onchange=()=>renderItems();
+gel('fPolaroid').onchange=()=>{setPolaQty(gel('fPolaroid').checked?Math.max(1,Math.round(Number(gel('fPolaroidQty').value)||1)):0);renderItems();};
+gel('polaMinus').onclick=()=>{setPolaQty(readPolaQty()-1);renderItems();};
+gel('polaPlus').onclick=()=>{setPolaQty(readPolaQty()+1);renderItems();};
+gel('fPolaroidQty').oninput=()=>renderItems();
+gel('fPolaroidQty').onchange=()=>{setPolaQty(readPolaQty());renderItems();};
 function toggleNoField(){
   const src=document.getElementById('fSrc').value,fNo=document.getElementById('fNo'),hint=document.getElementById('fNoHint');
   if(editId!==null) return;
@@ -1360,7 +1386,7 @@ function openAdd(){
   editId=null;document.getElementById('formTitle').textContent='Add order';document.getElementById('formOno').textContent='';
   stagedItems=[];orderDiscount=null;orderDelivery=null;clearComposer();renderItems();
   ['fCust','fPhone','fAddr','fNote','fRemarks'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('fPolaroid').checked=false;
+  setPolaQty(0);
   fillSelect('fSrc',SOURCES,'Whatsapp');fillSelect('fTrans',TRANSPORT,'2 Wheeler');fillSelect('fPay',PAYMENTS,'Paid');
   formMakers=[];formOwners=[];renderPeoplePickers();
   document.getElementById('fMakerNew').value='';document.getElementById('fOwnerNew').value='';
@@ -1374,7 +1400,7 @@ function openEdit(id){
   document.getElementById('formTitle').textContent='Edit order';document.getElementById('formOno').textContent='Order '+o.no;
   clearComposer();stagedItems=orderItems(o).map(x=>({type:x.type||'Bouquet',det:x.det||x.type||'',val:Number(x.val)||0,qty:Math.max(1,Math.round(Number(x.qty)||1))}));
   orderDiscount=o.discount?{type:o.discount.type,value:o.discount.value}:null;orderDelivery=(Number(o.delivery)||0)>0?Number(o.delivery):null;
-  document.getElementById('fPolaroid').checked=!!o.polaroid;renderItems();
+  setPolaQty(o.polaQty||0);renderItems();
   const fNo=document.getElementById('fNo');fNo.readOnly=false;fNo.value=o.no||'';document.getElementById('fNoHint').textContent='';
   document.getElementById('fCust').value=o.cust||'';document.getElementById('fPhone').value=o.phone||'';
   document.getElementById('fOd').value=o.od||rangeFrom;document.getElementById('fDd').value=o.dd||rangeFrom;
@@ -1428,7 +1454,7 @@ document.getElementById('saveAdd').onclick=async()=>{
     od:document.getElementById('fOd').value,dd:document.getElementById('fDd').value,src:document.getElementById('fSrc').value,
     trans:document.getElementById('fTrans').value,pay:document.getElementById('fPay').value,makers:formMakers.slice(),owners:formOwners.slice(),maker:formMakers.join(', '),
     addr:document.getElementById('fAddr').value.trim(),note:document.getElementById('fNote').value.trim(),
-    remarks:document.getElementById('fRemarks').value.trim(),polaroid:document.getElementById('fPolaroid').checked,
+    remarks:document.getElementById('fRemarks').value.trim(),polaQty:readPolaQty(),polaroid:readPolaQty()>0,
     urgent:document.getElementById('fUrgent').checked};
   if(editId!==null){
     const o=byId(editId);if(!o)return;Object.assign(o,common,{no:document.getElementById('fNo').value.trim()||o.no});closeForm();renderCurrent();
@@ -1443,7 +1469,7 @@ document.getElementById('saveAdd').onclick=async()=>{
     if(error)return toast('Save failed: '+esc(error.message));
     if(usedAuto)NEXT_NO++;
     const added=fromDB(data);ORDERS.push(added);recomputeRepeat();closeForm();setRange(added.dd,added.dd<rangeToSafe()?rangeToSafe():added.dd);
-    toast(`<b>${esc(added.no)}</b> · ${esc(cust)} added — ${esc(det)}${items.length>1?` (${items.length} items)`:''}.${added.polaroid?' 📷':''}${added.urgent?' ⚡ Urgent.':''}`);
+    toast(`<b>${esc(added.no)}</b> · ${esc(cust)} added — ${esc(det)}${items.length>1?` (${items.length} items)`:''}.${added.polaQty?' 📷'+(added.polaQty>1?'×'+esc(added.polaQty):''):''}${added.urgent?' ⚡ Urgent.':''}`);
   }
 };
 
