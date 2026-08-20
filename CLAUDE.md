@@ -125,8 +125,10 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
   - **Density toggle** (cards vs compact list), persisted in `localStorage` under `urth_density`.
 - Mobile: a fixed **bottom nav** (Home/Calendar/Subs/Products) plus a floating **+ FAB** replace the
   top tabs and header "Add order" button on ≤760px screens (mobile is the primary surface).
-- Calendar tab is passcode-gated client-side (not real auth) — passcode is `urth@001122`.
-  This is a soft privacy gate, not security; real access control is Supabase Auth (login screen).
+- Calendar tab is passcode-gated client-side (not real auth) — passcode is `CAL_PASS`, currently
+  `urththegreencompany00`. This is a soft privacy gate, not security; real access control is
+  Supabase Auth (login screen). It is **separate from `EDIT_PASS`** (the two shared one constant
+  until Aug 2026), so the Calendar can be rotated without forcing every editor to relearn theirs.
 - **Edit gate**: everyone who logs in can *view*, but all mutations (add/edit/status/maker/urgent/
   reschedule/cancel, and the editable Products/Subscriptions tables) are gated behind the same
   passcode (`EDIT_PASS`, currently `urth@001122`). Toggle via the header "🔒 View only / 🔓 Editing

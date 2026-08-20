@@ -55,7 +55,7 @@
   .tab{border:1px solid transparent; background:transparent; color:var(--green-soft); padding:8px 15px; border-radius:999px; font-size:14px; font-weight:700}
   .tab.active{background:var(--forest); color:#F4ECE2}
 
-  .kpis{display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin:14px 0 6px}
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:14px 0 6px}
   .kpi{background:var(--cream-2); border:1px solid var(--line); border-radius:var(--radius); padding:12px 13px; box-shadow:var(--shadow)}
   .kpi .lab{font-size:10.5px; text-transform:uppercase; letter-spacing:.6px; color:var(--green-soft); font-weight:800}
   .kpi .val{font-family:var(--serif); font-size:24px; color:var(--green); margin-top:4px; line-height:1}
@@ -716,6 +716,9 @@ let searchQuery='', overdueMode=false;
 let density=localStorage.getItem('urth_density')||'cards';
 let editUnlocked=sessionStorage.getItem('urth_edit')==='1';
 const EDIT_PASS='urth@001122';
+/* Calendar has its own gate, independent of the edit gate above. Both are soft
+   client-side privacy gates, not security — RLS still governs the DB. */
+const CAL_PASS='urththegreencompany00';
 let NEXT_NO=2001, currentView='home', calUnlocked=false;
 let calY=new Date().getFullYear(), calM=new Date().getMonth();
 const recentLocal=new Set();
@@ -830,17 +833,15 @@ const inRange=()=>ORDERS.filter(o=>o.dd>=rangeFrom&&o.dd<=rangeToSafe());
 function daysInRange(){let a=[],d=rangeFrom,g=0;const to=rangeToSafe();while(d<=to&&g<120){a.push(d);d=addDays(d,1);g++;}return a;}
 const rangeLabel=()=> rangeFrom===rangeToSafe()?fmtDayDate(rangeFrom):(shortD(rangeFrom)+' – '+shortD(rangeToSafe()));
 
-/* ===== KPIs (over range; top product removed) ===== */
+/* ===== KPIs (over range; top-product and revenue tiles removed) ===== */
 function renderKPIs(){
   const all=inRange(), act=all.filter(o=>o.status!=='cancelled');
   const cancelled=all.length-act.length;
-  const revenue=act.reduce((a,o)=>a+(o.val||0),0);
   const wa=act.filter(o=>/whatsapp/i.test(o.src)).length,wi=act.filter(o=>/walk/i.test(o.src)).length,wb=act.filter(o=>/website/i.test(o.src)).length;
   const pend=act.filter(o=>/pending/i.test(o.pay)),pendAmt=pend.reduce((a,o)=>a+(o.val||0),0);
   const ready=act.filter(o=>o.status==='dispatched'||o.status==='ready').length;
   const K=[
     {lab:'Orders',val:act.length,foot:rangeLabel()+(cancelled?(' · '+cancelled+' cancelled'):'')},
-    {lab:'Revenue',val:fmtINR(revenue),foot:'booked value'},
     {lab:'Source mix',val:`${wa}<small> WA</small> ${wi}<small> WI</small> ${wb}<small> Web</small>`,foot:'WhatsApp·Walk-in·Web'},
     {lab:'Pending payments',val:pend.length,foot:fmtINR(pendAmt)+' to chase',accent:pend.length>0},
     {lab:'Ready for dispatch',val:ready,foot:'ready / dispatched'},
@@ -1091,7 +1092,7 @@ function showCalendar(){
   if(calUnlocked){gate.style.display='none';content.style.display='';renderCalendar();}
   else{gate.style.display='';content.style.display='none';setTimeout(()=>{const p=document.getElementById('calPass');if(p)p.focus();},50);}
 }
-document.getElementById('calUnlock').onclick=()=>{if(document.getElementById('calPass').value===EDIT_PASS){calUnlocked=true;document.getElementById('calPass').value='';document.getElementById('calErr').textContent='';showCalendar();}else document.getElementById('calErr').textContent='Incorrect passcode. Try again.';};
+document.getElementById('calUnlock').onclick=()=>{if(document.getElementById('calPass').value===CAL_PASS){calUnlocked=true;document.getElementById('calPass').value='';document.getElementById('calErr').textContent='';showCalendar();}else document.getElementById('calErr').textContent='Incorrect passcode. Try again.';};
 document.getElementById('calPass').onkeydown=e=>{if(e.key==='Enter')document.getElementById('calUnlock').click();};
 
 /* ===== SUBSCRIPTIONS ===== */
