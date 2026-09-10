@@ -604,8 +604,10 @@
         <div class="addperson"><input id="fOwnerNew" placeholder="Add a new owner" autocomplete="off" /><button type="button" class="addbtn" id="fOwnerAdd">＋ Add</button></div>
       </div>
       <label>Delivery address</label><textarea id="fAddr" rows="2" placeholder="Recipient address"></textarea>
-      <label>Receiver contact number <span class="lab-hint">optional · shows with the address</span></label>
-      <input type="text" id="fRecv" placeholder="+91 81974 97531" inputmode="tel" autocomplete="off" />
+      <div id="recvField">
+        <label>Receiver contact number <span class="lab-hint">optional · shows with the address</span></label>
+        <input type="text" id="fRecv" placeholder="+91 81974 97531" inputmode="tel" autocomplete="off" />
+      </div>
       <label>Message note (from customer)</label><textarea id="fNote" rows="2" placeholder="Note to include with the flowers"></textarea>
       <label>Remarks (internal)</label><textarea id="fRemarks" rows="2" placeholder="Anything the team should know about this order"></textarea>
       <div class="files-field" id="filesField">
@@ -797,7 +799,8 @@ async function loadAll(){
     db.from('orders').select('receiver_phone').limit(1),
     db.from('orders').select('attachments').limit(1)]);
   HAS_POLA_QTY=!pq.error; HAS_RECV_PHONE=!prp.error; HAS_FILES=!pat.error;
-  const ff=document.getElementById('filesField'); if(ff)ff.style.display=HAS_FILES?'':'none';
+  const showIf=(id,ok)=>{const el=document.getElementById(id);if(el)el.style.display=ok?'':'none';};
+  showIf('filesField',HAS_FILES); showIf('recvField',HAS_RECV_PHONE);
   ORDERS=await fetchAllOrders(); recomputeRepeat();
   /* shop walk-in/WhatsApp sequence is #2xxx; ignore 6-digit Shopify-style numbers so auto-assign stays in the tidy range */
   NEXT_NO=Math.max(2000,...ORDERS.map(o=>{const n=parseInt(String(o.no||'').replace(/\D/g,''))||0;return n<100000?n:0;}))+1;
