@@ -272,6 +272,13 @@
   .stab .scount{background:#EDE3D5;color:var(--green);border-radius:999px;font-size:11px;font-weight:800;padding:1px 7px}
   .stab.on{background:var(--sbg);border-color:var(--sc)}
   .stab.on .scount{background:var(--sc);color:#fff}
+  .tabs-label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--green-soft);font-weight:800;margin:9px 2px 1px}
+  .item-tabs{display:flex;gap:8px;overflow-x:auto;padding:3px 2px 5px;margin:0 0 2px;-webkit-overflow-scrolling:touch}
+  .item-tabs::-webkit-scrollbar{height:0}
+  .itab{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:#fff;color:var(--green);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700;white-space:nowrap;cursor:pointer}
+  .itab .icount{background:#EDE3D5;color:var(--green);border-radius:999px;font-size:11px;font-weight:800;padding:1px 7px}
+  .itab.on{background:var(--forest);color:#F4ECE2;border-color:var(--forest)}
+  .itab.on .icount{background:rgba(244,236,226,.20);color:#F4ECE2}
   .statuspill{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.3px;white-space:nowrap}
   .badge.pola{background:#3C4A5E;color:#fff}
   .note-line{font-size:12.5px;color:var(--ink);margin-top:8px;background:#F3EAD9;border-left:3px solid var(--clay);border-radius:8px;padding:7px 10px}
@@ -462,6 +469,8 @@
       </div>
       <div class="kpis" id="kpis"></div>
       <div class="status-tabs" id="statusTabs"></div>
+      <div class="tabs-label" id="itemTabsLabel" style="display:none">What’s being made</div>
+      <div class="item-tabs" id="itemTabs"></div>
       <div class="sec-head"><h2 id="homeHeading">Upcoming</h2>
         <div class="head-actions"><div class="density-toggle" id="densityToggle"></div><button class="btn" id="addBtn">+ Add order</button></div>
       </div>
@@ -752,7 +761,7 @@ function addDays(s,n){const p=s.split('-').map(Number);const d=new Date(Date.UTC
 
 /* ===== live state ===== */
 let ORDERS=[], CATALOG=[], LOOSE=[], SUBS=[];
-let rangeFrom=todayISO(), rangeTo=addDays(todayISO(),3), statusFilter='all';
+let rangeFrom=todayISO(), rangeTo=addDays(todayISO(),3), statusFilter='all', itemFilter='';
 let searchQuery='', overdueMode=false;
 let density=localStorage.getItem('urth_density')||'cards';
 let editUnlocked=sessionStorage.getItem('urth_edit')==='1';
@@ -840,8 +849,27 @@ async function loadStaff(){
 }
 
 /* ===== helpers ===== */
+/* ===== item breakdown =====
+   One order can hold several items, so this counts ITEMS × qty, not orders: "3 Verona" means
+   three to make whether they sit on one order or three. Catalogue lines bucket by product name
+   (Verona, Snowbell, a named planter); the free-text types collapse to the type itself, because
+   a det like "Custom — blush / peonies, ranunculus" is unique per order and would otherwise make
+   a bucket of one every single time. Plants and dry flowers keep their det, which is already
+   short and specific ("Plant — Monstera"). */
+const ITEM_BUCKET_RULES=[[/^custom$/i,'Custom Bouquet'],[/vase arrangement/i,'Custom Vase'],[/loose/i,'Loose Flowers'],[/subscription/i,'Subscription']];
+function itemBucket(it){
+  const type=String((it&&it.type)||'').trim(), det=String((it&&it.det)||'').trim();
+  for(const [re,label] of ITEM_BUCKET_RULES) if(re.test(type)) return label;
+  if(/dry/i.test(type)) return det||'Dry Flowers';
+  if(/plant/i.test(type)) return det||'Plant';
+  return det||type||'Other';   /* catalogue bouquets & planters: det is the product name */
+}
+const orderBuckets=o=>orderItems(o).map(itemBucket);
+const itemQty=it=>Math.max(1,Math.round(Number(it&&it.qty)||1));
+
 function passFilters(o){
   if(statusFilter!=='all' && o.status!==statusFilter) return false;
+  if(itemFilter && !orderBuckets(o).includes(itemFilter)) return false;
   return true;
 }
 /* Default order: cancelled sink to the bottom, urgent pinned to the top, then newest-added
@@ -912,6 +940,31 @@ function renderStatusTabs(){
   const el=document.getElementById('statusTabs');
   el.innerHTML=tabs.map(([k,label,color,bg])=>`<button class="stab ${statusFilter===k?'on':''}" data-stab="${k}" style="--sc:${color};--sbg:${bg}"><span class="sdot"></span>${label}<span class="scount">${counts[k]}</span></button>`).join('');
   el.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{statusFilter=b.dataset.stab;renderHome();});
+}
+
+/* Counts are computed against the status filter but NOT the item filter, so the numbers stay
+   put when a bucket is selected — otherwise picking "Verona" would zero out every other chip. */
+function renderItemTabs(){
+  const base=inRange().filter(o=>statusFilter==='all'?o.status!=='cancelled':o.status===statusFilter);
+  const counts=new Map();
+  base.forEach(o=>orderItems(o).forEach(it=>{
+    const b=itemBucket(it); counts.set(b,(counts.get(b)||0)+itemQty(it));
+  }));
+  const el=document.getElementById('itemTabs'), lab=document.getElementById('itemTabsLabel');
+  if(!el)return;
+  if(!counts.size){el.innerHTML='';if(lab)lab.style.display='none';return;}
+  if(lab)lab.style.display='';
+  const total=[...counts.values()].reduce((a,n)=>a+n,0);   /* before any zero placeholder is added */
+  /* biggest first, alphabetical within a tie, so the row doesn't reshuffle on every render */
+  if(itemFilter&&!counts.has(itemFilter))counts.set(itemFilter,0);
+  const rows=[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  el.innerHTML=`<button class="itab ${itemFilter?'':'on'}" data-itab="">All items<span class="icount">${total}</span></button>`
+    +rows.map(([b,n])=>`<button class="itab ${itemFilter===b?'on':''}" data-itab="${esc(b)}">${esc(b)}<span class="icount">${n}</span></button>`).join('');
+  el.querySelectorAll('[data-itab]').forEach(btn=>btn.onclick=()=>{
+    const v=btn.dataset.itab;
+    itemFilter=(v&&v===itemFilter)?'':v;   /* tapping the active chip clears it */
+    renderHome();
+  });
 }
 
 /* ===== HOME ===== */
@@ -1082,7 +1135,7 @@ function orderRow(o){
 }
 function dayHtml(date){
   const list=ordersOn(date), dayName=WEEK[parseD(date).getDay()];
-  const noFilters=statusFilter==='all';
+  const noFilters=statusFilter==='all'&&!itemFilter;
   const subs=noFilters?subsForDay(date):[];
   if(!list.length&&!subs.length) return '';
   const active=list.filter(o=>o.status!=='cancelled').length;
@@ -1116,7 +1169,7 @@ function renderDensityToggle(){
 function clearSearchState(){searchQuery='';const el=document.getElementById('orderSearch');if(el)el.value='';}
 function clearSearch(){clearSearchState();renderHome();}
 function renderHome(){
-  renderAttention(); renderKPIs(); renderStatusTabs(); renderPresets(); renderDensityToggle();
+  renderAttention(); renderKPIs(); renderStatusTabs(); renderItemTabs(); renderPresets(); renderDensityToggle();
   const host=document.getElementById('days'), heading=document.getElementById('homeHeading');
   if(searchQuery.trim()){
     if(heading)heading.textContent='Search results';
