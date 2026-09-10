@@ -270,6 +270,11 @@
   .stab{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:#fff;color:var(--green);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
   .stab .sdot{width:9px;height:9px;border-radius:50%;background:var(--sc)}
   .stab .scount{background:#EDE3D5;color:var(--green);border-radius:999px;font-size:11px;font-weight:800;padding:1px 7px}
+  /* The item row is opened deliberately and can hold any number of products, so it wraps
+     instead of scrolling — a hidden-scrollbar row just looks severed at the right edge. */
+  .item-row{flex-wrap:wrap;overflow-x:visible;row-gap:8px;padding-bottom:7px}
+  .item-row .stab{max-width:100%}
+  .item-row .slab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .stab.on{background:var(--sbg);border-color:var(--sc)}
   .stab.on .scount{background:var(--sc);color:#fff}
   .statuspill{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.3px;white-space:nowrap}
@@ -462,7 +467,7 @@
       </div>
       <div class="kpis" id="kpis"></div>
       <div class="status-tabs" id="statusTabs"></div>
-      <div class="status-tabs" id="itemTabs" style="display:none"></div>
+      <div class="status-tabs item-row" id="itemTabs" style="display:none"></div>
       <div class="sec-head"><h2 id="homeHeading">Upcoming</h2>
         <div class="head-actions"><div class="density-toggle" id="densityToggle"></div><button class="btn" id="addBtn">+ Add order</button></div>
       </div>
@@ -941,7 +946,7 @@ function renderStatusTabs(){
   /* biggest first, alphabetical within a tie, so the row doesn't reshuffle on every render */
   const rows=[...items.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
   const chip=(on,attr,color,bg,label,count)=>
-    `<button class="stab ${on?'on':''}" ${attr} style="--sc:${color};--sbg:${bg}"><span class="sdot"></span>${label}<span class="scount">${count}</span></button>`;
+    `<button class="stab ${on?'on':''}" ${attr} style="--sc:${color};--sbg:${bg}"><span class="sdot"></span><span class="slab">${label}</span><span class="scount">${count}</span></button>`;
   const el=document.getElementById('statusTabs');
   el.innerHTML=chip(statusFilter==='all'&&!itemFilter,'data-allreset="1"','#687259','#E4EADF','All '+(itemsOpen?'▴':'▾'),counts.all)
     +Object.entries(STATUS_META).map(([k,m])=>chip(statusFilter===k,`data-stab="${k}"`,m.color,m.bg,m.label,counts[k])).join('');
