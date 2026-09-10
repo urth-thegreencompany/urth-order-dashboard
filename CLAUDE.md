@@ -107,7 +107,11 @@ any `authenticated` user can select/insert/update/delete within `bucket_id = 'or
   attached to an order. The bucket is **private**, so every view goes through a short-lived
   signed URL (`createSignedUrl`, 1h, cached in `signedCache` for 50min). Cards render
   `<img data-thumb="path">` placeholders that `hydrateThumbs()` fills in after the board is in
-  the DOM, because a signed URL can't be awaited inside a template literal. Uploads land in
+  the DOM, because a signed URL can't be awaited inside a template literal. On cards they sit in
+  a panel collapsed behind a 📎 button next to 📍 — same toggle pattern as the address, and
+  likewise still visible when locked, since viewing isn't editing. Thumbnails are signed on first
+  open of that panel, so drawing a board of 40 orders doesn't mint a signed URL per file.
+  Uploads land in
   storage the moment a file is picked, so two diffs keep the bucket tidy: closing the form
   without saving deletes everything uploaded in that sitting (`discardFormUploads`, hooked to
   `closeForm` *and* `popstate` for the back gesture), and saving an edit deletes whatever the
