@@ -116,7 +116,15 @@ any `authenticated` user can select/insert/update/delete within `bucket_id = 'or
   without saving deletes everything uploaded in that sitting (`discardFormUploads`, hooked to
   `closeForm` *and* `popstate` for the back gesture), and saving an edit deletes whatever the
   edit dropped; deleting an order deletes its files. JPEG/PNG/WebP images are downscaled to
-  1600px JPEG client-side before upload (phone shots are 4-8MB; the free tier is 1GB). `openFile`
+  1600px JPEG client-side before upload (phone shots are 4-8MB; the free tier is 1GB).
+  Files arrive three ways, all through `ingestFiles`: the picker, **paste**, and drag-and-drop.
+  The paste listener sits on `document` (so a paste lands wherever focus is in the form) but only
+  claims the event when the clipboard actually holds a file — pasting text into a field is
+  untouched. The paste zone is `contenteditable` purely because iOS won't raise a paste event on a
+  plain div; anything typed into it is wiped on `input`. Clipboard images come named "image.png"
+  or unnamed, so they're renamed `pasted-<timestamp>.<ext>`. While the form is open the page
+  swallows stray drops, since a file dropped just outside the zone would navigate the tab to it
+  and take the half-filled form with it. `openFile`
   claims the new tab synchronously on tap before awaiting the signed URL — Safari blocks
   `window.open` once an `await` has broken the user gesture. `HAS_FILES` / `HAS_RECV_PHONE` are
   probed on load alongside `HAS_POLA_QTY`; when `HAS_FILES` is false the upload section is hidden

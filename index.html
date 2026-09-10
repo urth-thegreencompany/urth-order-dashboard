@@ -140,6 +140,12 @@
   .vis-hidden{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0}
   label.addbtn{display:inline-block; text-align:center}
   .vis-hidden:focus-visible+label.addbtn{outline:2px solid var(--green); outline-offset:2px}
+  /* contenteditable purely so mobile offers a Paste target — iOS won't raise a paste event on a
+     plain div. Anything typed into it is wiped on input; only the hint shows when it's empty. */
+  .pastezone{margin-top:9px; border:1.5px dashed var(--line); border-radius:12px; padding:13px 12px; text-align:center; font-size:12.5px; font-weight:700; color:var(--green-soft); background:#FBF6EF; cursor:text; min-height:46px; display:flex; align-items:center; justify-content:center; overflow:hidden}
+  .pastezone:empty::before{content:'Tap here and paste an image — or drop a file'}
+  .pastezone:focus{outline:none; border-color:var(--green); background:#fff; color:var(--green)}
+  .pastezone.over{border-color:var(--green); background:#EDF2EA; color:var(--green)}
   .fileprog{font-size:12px; color:var(--green-soft); font-style:italic}
   .fileprog.err{color:var(--urgent); font-style:normal; font-weight:700}
   .files-panel{margin-top:8px; background:#EFE6D9; border-radius:10px; padding:8px 10px; display:none}
@@ -631,6 +637,7 @@
           <label class="addbtn" for="fFileInput" id="fFileBtn">＋ Upload photo / PDF</label>
           <span class="fileprog" id="fFileProg"></span>
         </div>
+        <div class="pastezone" id="pasteZone" contenteditable="true" role="button" tabindex="0" aria-label="Paste or drop an image here"></div>
       </div>
       <div class="chk"><input type="checkbox" id="fPolaroid" /><label style="margin:0;text-transform:none;font-size:14px">📷 Include polaroids</label><div class="qtybox polaqty" id="polaQtyBox"><button type="button" class="qtybtn" id="polaMinus" aria-label="Fewer polaroids">−</button><input type="number" id="fPolaroidQty" value="1" min="1" inputmode="numeric" aria-label="Number of polaroids" /><button type="button" class="qtybtn" id="polaPlus" aria-label="More polaroids">+</button></div></div>
       <div class="chk"><input type="checkbox" id="fUrgent" /><label style="margin:0;text-transform:none;font-size:14px">⚡ Mark as urgent</label></div>
@@ -1628,14 +1635,63 @@ async function addFormFiles(list){
 /* input.files is a LIVE FileList, so it has to be copied into a real array before the input is
    cleared — clearing it empties the very list we're about to read, silently uploading nothing.
    (The input is cleared so picking the same file twice in a row still fires change.) */
-document.getElementById('fFileInput').onchange=async e=>{
+async function ingestFiles(list){
+  const arr=Array.from(list||[]); if(!arr.length)return;
+  const prog=document.getElementById('fFileProg');
+  try{ await addFormFiles(arr); }
+  catch(err){ prog.classList.add('err'); prog.textContent='Upload failed: '+((err&&err.message)||err); }
+}
+document.getElementById('fFileInput').onchange=e=>{
   const picked=Array.from(e.target.files||[]);
   e.target.value='';
-  if(!picked.length)return;
-  const prog=document.getElementById('fFileProg');
-  try{ await addFormFiles(picked); }
-  catch(err){ prog.classList.add('err'); prog.textContent='Upload failed: '+((err&&err.message)||err); }
+  ingestFiles(picked);
 };
+
+/* ===== paste & drop =====
+   Clipboard images arrive named "image.png" or nothing at all, so they get a timestamped name —
+   otherwise every pasted screenshot on an order reads identically. */
+function clipboardFiles(dt){
+  if(!dt)return [];
+  const raw=(dt.files&&dt.files.length)
+    ? Array.from(dt.files)
+    : Array.from(dt.items||[]).filter(i=>i.kind==='file').map(i=>i.getAsFile()).filter(Boolean);
+  return raw.filter(f=>/^image\//.test(f.type)||f.type==='application/pdf');
+}
+function namePasted(f,i){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  const stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  const ext=((f.type.split('/')[1])||'png').replace('jpeg','jpg');
+  return new File([f],`pasted-${stamp}${i?'-'+(i+1):''}.${ext}`,{type:f.type});
+}
+/* Listens on the document so a paste lands wherever focus happens to be in the form, but only
+   claims the event when the clipboard actually holds a file — pasting text into any field still
+   behaves normally. */
+document.addEventListener('paste',e=>{
+  if(!HAS_FILES)return;
+  const sc=document.getElementById('scrim');
+  if(!sc||!sc.classList.contains('show'))return;
+  const files=clipboardFiles(e.clipboardData);
+  if(!files.length)return;
+  e.preventDefault();
+  const pz=document.getElementById('pasteZone'); if(pz)pz.textContent='';
+  ingestFiles(files.map(namePasted));
+});
+/* A file dropped just outside the zone would otherwise navigate the tab to it and take a
+   half-filled order form with it, so while the form is open the page swallows stray drops. */
+['dragover','drop'].forEach(ev=>document.addEventListener(ev,e=>{
+  const sc=document.getElementById('scrim');
+  if(sc&&sc.classList.contains('show'))e.preventDefault();
+}));
+const pasteZone=document.getElementById('pasteZone');
+if(pasteZone){
+  pasteZone.oninput=()=>{pasteZone.textContent='';};   /* it's a paste target, not a text field */
+  ['dragenter','dragover'].forEach(ev=>pasteZone.addEventListener(ev,e=>{e.preventDefault();pasteZone.classList.add('over');}));
+  ['dragleave','dragend'].forEach(ev=>pasteZone.addEventListener(ev,()=>pasteZone.classList.remove('over')));
+  pasteZone.addEventListener('drop',e=>{
+    e.preventDefault(); pasteZone.classList.remove('over');
+    ingestFiles(e.dataTransfer&&e.dataTransfer.files);
+  });
+}
 /* Abandoning the form (Cancel, ‹ Back, or the phone's back gesture) shouldn't leave uploads
    stranded in the bucket with nothing pointing at them. */
 function discardFormUploads(){
