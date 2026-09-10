@@ -41,17 +41,24 @@ orders (
   order_date date, delivery_date date not null,
   order_type text, details text, value_inr integer default 0,
   delivery_time text, source text, transport_mode text, maker text,
-  payment_status text, address text, status order_status default 'new',
+  payment_status text, address text,
+  receiver_phone text,     -- who to call on arrival at the address (≠ phone, the customer)
+  status order_status default 'new',
   urgent boolean default false, created_at timestamptz default now(),
   message_note text,       -- customer's note to include with the flowers
   polaroid boolean default false,  -- auto-derived summary: true when polaroid_qty > 0
   polaroid_qty integer default 0,  -- how many polaroids are requested (each charged POLAROID_FEE)
   remarks text,            -- internal team notes, not customer-facing
   items jsonb,             -- multi-item breakdown: [{type,det,val},...]; null = legacy single-item
-  discount jsonb           -- order-level discount {type:'pct'|'amt', value}; null = none
+  discount jsonb,          -- order-level discount {type:'pct'|'amt', value}; null = none
+  attachments jsonb        -- [{path,name,type,size},...] pointing into the order-files bucket
 )
 ```
 RLS: enabled on all three tables, policy = any `authenticated` user can read/write.
+
+Storage: a **private** bucket `order-files` holds the uploaded photos/PDFs; `orders.attachments`
+stores only metadata, and `path` is the key inside that bucket. Policies mirror the tables —
+any `authenticated` user can select/insert/update/delete within `bucket_id = 'order-files'`.
 
 ## Data model notes
 - **Order numbers**: WhatsApp and Walk-in orders auto-assign the next sequential number
@@ -90,6 +97,26 @@ RLS: enabled on all three tables, policy = any `authenticated` user can read/wri
   In the form the checkbox is the on/off and a ± stepper next to it sets the count; stepping down
   to 0 switches it back off. `HAS_POLA_QTY` is probed on load so the app still saves correctly if
   it deploys before the migration is run.
+- **Receiver contact number** (`orders.receiver_phone`) is the number to call on arrival at the
+  delivery address — distinct from `orders.phone`, which stays the *customer* (whoever placed the
+  order; gift orders make these two different people). It renders inside the 📍 address panel,
+  labelled "Receiver" above the customer's "Customer" line, both with tap-to-call/WhatsApp links,
+  and rides along in the Dispatched toast/OS notification since that's the logistics handoff.
+  It is not part of repeat-customer detection — that still keys on `phone`.
+- **Attachments** (`orders.attachments` + the `order-files` bucket): reference photos and PDFs
+  attached to an order. The bucket is **private**, so every view goes through a short-lived
+  signed URL (`createSignedUrl`, 1h, cached in `signedCache` for 50min). Cards render
+  `<img data-thumb="path">` placeholders that `hydrateThumbs()` fills in after the board is in
+  the DOM, because a signed URL can't be awaited inside a template literal. Uploads land in
+  storage the moment a file is picked, so two diffs keep the bucket tidy: closing the form
+  without saving deletes everything uploaded in that sitting (`discardFormUploads`, hooked to
+  `closeForm` *and* `popstate` for the back gesture), and saving an edit deletes whatever the
+  edit dropped; deleting an order deletes its files. JPEG/PNG/WebP images are downscaled to
+  1600px JPEG client-side before upload (phone shots are 4-8MB; the free tier is 1GB). `openFile`
+  claims the new tab synchronously on tap before awaiting the signed URL — Safari blocks
+  `window.open` once an `await` has broken the user gesture. `HAS_FILES` / `HAS_RECV_PHONE` are
+  probed on load alongside `HAS_POLA_QTY`; when `HAS_FILES` is false the upload section is hidden
+  outright, so the app is safe to deploy before the migration is run.
 - **Urgent** is a boolean toggle (⚡) that visually rings the card and sorts it to the top of
   its delivery-time slot.
 
@@ -164,13 +191,17 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
   (defined next to `fmtINR`). Never interpolate raw order/customer/product data into a template
   literal that lands in `innerHTML` — stored XSS here would expose every staff session.
   `textContent` assignments don't need it.
+- **Attachment privacy**: the `order-files` bucket must stay `public = false`. Flipping it public
+  would put customer reference photos on guessable, un-authenticated URLs. Views go through
+  signed URLs only.
 - **CDN pinning**: supabase-js is pinned to an exact version with SRI
   (`@supabase/supabase-js@2.110.7/dist/umd/supabase.js` + `integrity` + `crossorigin`). To bump:
   fetch the new version's `dist/umd/supabase.js` from jsdelivr, recompute
   `sha384` (`openssl dgst -sha384 -binary file | openssl base64 -A`), update both attrs.
   Don't revert to the floating `@2` URL.
 - **Headers**: `vercel.json` sets CSP, HSTS, nosniff, frame-ancestors 'none', Referrer-Policy,
-  Permissions-Policy, X-Robots-Tag noindex, and cache headers for `assets/`/`fonts/`. If a new
+  Permissions-Policy, X-Robots-Tag noindex, and cache headers for `assets/`/`fonts/`.
+  `img-src` includes the Supabase origin (plus `blob:`) so signed attachment thumbnails render. If a new
   external origin is ever added (script, font, API), it must also be added to the CSP or it will
   be blocked in production (headers don't apply on `file://` or local dev servers).
 - **PII hygiene**: `*.xlsx`, `*.csv`, the legacy import SQL, and `Branding/` are gitignored —

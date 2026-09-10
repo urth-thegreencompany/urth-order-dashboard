@@ -103,6 +103,8 @@
   .flowers{font-size:12px; color:var(--green-soft); margin-top:8px; font-style:italic}
   .addr{font-size:12.5px; color:var(--ink); margin-top:8px; background:#EFE6D9; border-radius:10px; padding:8px 10px; display:none}
   .addr.show{display:block}
+  .addr-contacts{display:flex; flex-direction:column; gap:6px; align-items:flex-start; margin-top:8px}
+  .ctlab{font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--green-soft); min-width:58px}
   .card-actions{display:flex; align-items:center; gap:7px; margin-top:11px; flex-wrap:wrap}
   select.mini,input.mini{font-family:var(--sans); font-size:12.5px; font-weight:700; border:1px solid var(--line); border-radius:9px; padding:6px 8px; background:#fff; color:var(--green)}
   .iconbtn{border:1px solid var(--line); background:#fff; border-radius:9px; padding:6px 9px; font-size:12.5px; font-weight:700; color:var(--green-soft)}
@@ -123,6 +125,25 @@
   .addperson input{flex:1; font-family:var(--sans); font-size:13.5px; border:1px solid var(--line); border-radius:9px; padding:8px 10px; background:#fff; color:var(--ink)}
   .addbtn{white-space:nowrap; font-family:var(--sans); font-size:13px; font-weight:800; border:1px solid var(--line); background:var(--cream-2); color:var(--green); border-radius:9px; padding:9px 13px; cursor:pointer}
   .addbtn:active{background:#EFE6D9}
+
+  /* attachments — form picker + on-card chips */
+  .files-field{margin-top:2px}
+  .filelist{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 8px}
+  .fileitem{display:flex; align-items:center; gap:8px; border:1px solid var(--line); background:#fff; border-radius:10px; padding:5px 7px 5px 5px; max-width:100%}
+  .fileitem .fthumb{width:38px; height:38px; border-radius:7px; object-fit:cover; background:var(--cream-2); border:1px solid var(--line); display:block; flex:none}
+  .fileitem .fdoc{width:38px; height:38px; border-radius:7px; background:#F3EAD9; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:17px; flex:none}
+  .fileitem .fopen{display:flex; align-items:center; gap:8px; border:none; background:none; padding:0; cursor:pointer; min-width:0; text-align:left}
+  .fileitem .fmeta{min-width:0; display:block}
+  .fileitem .fname{display:block; font-size:12.5px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px}
+  .fileitem .fsize{display:block; font-size:11px; color:var(--green-soft)}
+  .fileitem .frm{border:none; background:none; color:var(--urgent); font-size:15px; font-weight:800; padding:2px 6px; cursor:pointer; flex:none}
+  .fileprog{font-size:12px; color:var(--green-soft); font-style:italic}
+  .files-row{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
+  .filechip{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:#fff; border-radius:10px; padding:4px 9px 4px 4px; font-size:12px; font-weight:700; color:var(--green); cursor:pointer; max-width:100%}
+  .filechip img{width:30px; height:30px; border-radius:6px; object-fit:cover; background:var(--cream-2); display:block; flex:none}
+  .filechip .fdoc{width:30px; height:30px; border-radius:6px; background:#F3EAD9; display:flex; align-items:center; justify-content:center; font-size:15px; flex:none}
+  .filechip span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px}
+  .filechip:active{background:var(--cream-2)}
 
   .sub-day{background:#EBF0E7; border:1px dashed var(--leaf); border-radius:var(--radius); padding:13px 15px; margin-bottom:12px}
   .sub-day h3{font-size:15px; color:var(--leaf); display:flex; align-items:center; gap:8px}
@@ -583,8 +604,19 @@
         <div class="addperson"><input id="fOwnerNew" placeholder="Add a new owner" autocomplete="off" /><button type="button" class="addbtn" id="fOwnerAdd">＋ Add</button></div>
       </div>
       <label>Delivery address</label><textarea id="fAddr" rows="2" placeholder="Recipient address"></textarea>
+      <label>Receiver contact number <span class="lab-hint">optional · shows with the address</span></label>
+      <input type="text" id="fRecv" placeholder="+91 81974 97531" inputmode="tel" autocomplete="off" />
       <label>Message note (from customer)</label><textarea id="fNote" rows="2" placeholder="Note to include with the flowers"></textarea>
       <label>Remarks (internal)</label><textarea id="fRemarks" rows="2" placeholder="Anything the team should know about this order"></textarea>
+      <div class="files-field" id="filesField">
+        <label>Photos &amp; files <span class="lab-hint">reference images or a PDF · optional</span></label>
+        <div class="filelist" id="fFileList"></div>
+        <div class="addperson">
+          <input type="file" id="fFileInput" accept="image/*,application/pdf" multiple style="display:none" />
+          <button type="button" class="addbtn" id="fFileBtn">＋ Upload photo / PDF</button>
+          <span class="fileprog" id="fFileProg"></span>
+        </div>
+      </div>
       <div class="chk"><input type="checkbox" id="fPolaroid" /><label style="margin:0;text-transform:none;font-size:14px">📷 Include polaroids</label><div class="qtybox polaqty" id="polaQtyBox"><button type="button" class="qtybtn" id="polaMinus" aria-label="Fewer polaroids">−</button><input type="number" id="fPolaroidQty" value="1" min="1" inputmode="numeric" aria-label="Number of polaroids" /><button type="button" class="qtybtn" id="polaPlus" aria-label="More polaroids">+</button></div></div>
       <div class="chk"><input type="checkbox" id="fUrgent" /><label style="margin:0;text-transform:none;font-size:14px">⚡ Mark as urgent</label></div>
 
@@ -724,7 +756,7 @@ let calY=new Date().getFullYear(), calM=new Date().getMonth();
 const recentLocal=new Set();
 /* Probed once on load. Stays false until the polaroid_qty migration has been run, so a dashboard
    that deploys before the SQL is pasted in still saves fine — it just falls back to the boolean. */
-let HAS_POLA_QTY=false;
+let HAS_POLA_QTY=false, HAS_RECV_PHONE=false, HAS_FILES=false;
 
 /* ===== field mapping ===== */
 /* makers/owners are jsonb arrays; legacy `maker` text stays as an auto-derived comma-joined summary.
@@ -733,8 +765,8 @@ let HAS_POLA_QTY=false;
    auto-derived summary (qty>0) so old rows and anything still reading it keep working. Rows written
    before the qty column existed read back as 1 when the boolean is true. */
 const polaQtyFromDB=r=>{const q=Math.max(0,Math.round(Number(r.polaroid_qty)||0));return q||(r.polaroid?1:0);};
-const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,phone:r.phone||'',od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,items:Array.isArray(r.items)&&r.items.length?r.items:null,discount:r.discount||null,delivery:r.delivery_inr||0,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,makers:Array.isArray(r.makers)&&r.makers.length?r.makers:(r.maker?[r.maker]:[]),owners:Array.isArray(r.owners)?r.owners:[],pay:r.payment_status,addr:r.address,status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,polaQty:polaQtyFromDB(r),remarks:r.remarks||''});
-const toDB=o=>{const makers=Array.isArray(o.makers)?o.makers.filter(Boolean):(o.maker?[o.maker]:[]);const owners=Array.isArray(o.owners)?o.owners.filter(Boolean):[];const pq=Math.max(0,Math.round(Number(o.polaQty)||0));return{order_no:o.no,customer_name:o.cust,phone:o.phone||null,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,items:(Array.isArray(o.items)&&o.items.length)?o.items:null,discount:o.discount||null,delivery_inr:o.delivery||0,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:makers.join(', ')||null,makers:makers.length?makers:null,owners:owners.length?owners:null,payment_status:o.pay,address:o.addr,status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:pq>0,...(HAS_POLA_QTY?{polaroid_qty:pq}:{}),remarks:o.remarks||null};};
+const fromDB=r=>({id:r.id,no:r.order_no,cust:r.customer_name,phone:r.phone||'',od:r.order_date,dd:r.delivery_date,type:r.order_type,det:r.details,val:r.value_inr||0,items:Array.isArray(r.items)&&r.items.length?r.items:null,discount:r.discount||null,delivery:r.delivery_inr||0,time:r.delivery_time,src:r.source,trans:r.transport_mode,maker:r.maker,makers:Array.isArray(r.makers)&&r.makers.length?r.makers:(r.maker?[r.maker]:[]),owners:Array.isArray(r.owners)?r.owners:[],pay:r.payment_status,addr:r.address,recvPhone:r.receiver_phone||'',files:Array.isArray(r.attachments)?r.attachments:[],status:r.status||'new',urgent:!!r.urgent,note:r.message_note||'',polaroid:!!r.polaroid,polaQty:polaQtyFromDB(r),remarks:r.remarks||''});
+const toDB=o=>{const makers=Array.isArray(o.makers)?o.makers.filter(Boolean):(o.maker?[o.maker]:[]);const owners=Array.isArray(o.owners)?o.owners.filter(Boolean):[];const pq=Math.max(0,Math.round(Number(o.polaQty)||0));return{order_no:o.no,customer_name:o.cust,phone:o.phone||null,order_date:o.od||null,delivery_date:o.dd,order_type:o.type,details:o.det,value_inr:o.val||0,items:(Array.isArray(o.items)&&o.items.length)?o.items:null,discount:o.discount||null,delivery_inr:o.delivery||0,delivery_time:o.time,source:o.src,transport_mode:o.trans,maker:makers.join(', ')||null,makers:makers.length?makers:null,owners:owners.length?owners:null,payment_status:o.pay,address:o.addr,...(HAS_RECV_PHONE?{receiver_phone:o.recvPhone||null}:{}),...(HAS_FILES?{attachments:(Array.isArray(o.files)&&o.files.length)?o.files:null}:{}),status:o.status,urgent:!!o.urgent,message_note:o.note||null,polaroid:pq>0,...(HAS_POLA_QTY?{polaroid_qty:pq}:{}),remarks:o.remarks||null};};
 /* items accessor: real breakdown if present, else the legacy single-item shape from scalar columns */
 const orderItems=o=>(Array.isArray(o.items)&&o.items.length)?o.items:[{type:o.type,det:o.det,val:o.val}];
 const phoneDigits=p=>String(p||'').replace(/\D/g,'');
@@ -758,7 +790,14 @@ function recomputeRepeat(){
   ORDERS.forEach(o=>{const k=phoneDigits(o.phone)||(o.cust||'').toLowerCase();o.repeat=k&&seen.has(k);if(k)seen.add(k);});
 }
 async function loadAll(){
-  const probe=await db.from('orders').select('polaroid_qty').limit(1); HAS_POLA_QTY=!probe.error;
+  /* Column probes: each stays false until its migration has been run, so a deploy that lands
+     before the SQL is pasted into Supabase still saves — it just leaves that field out. */
+  const [pq,prp,pat]=await Promise.all([
+    db.from('orders').select('polaroid_qty').limit(1),
+    db.from('orders').select('receiver_phone').limit(1),
+    db.from('orders').select('attachments').limit(1)]);
+  HAS_POLA_QTY=!pq.error; HAS_RECV_PHONE=!prp.error; HAS_FILES=!pat.error;
+  const ff=document.getElementById('filesField'); if(ff)ff.style.display=HAS_FILES?'':'none';
   ORDERS=await fetchAllOrders(); recomputeRepeat();
   /* shop walk-in/WhatsApp sequence is #2xxx; ignore 6-digit Shopify-style numbers so auto-assign stays in the tidy range */
   NEXT_NO=Math.max(2000,...ORDERS.map(o=>{const n=parseInt(String(o.no||'').replace(/\D/g,''))||0;return n<100000?n:0;}))+1;
@@ -875,6 +914,78 @@ const subStatus=s=>subExpired(s)?'Expired':s.status;
 /* Board/calendar day cards: only live subscriptions, and never past their own end date — so a sub
    ending in 3 days stops appearing on day +10 of the range too. */
 const subsForDay=dateISO=>{const dayName=WEEK[parseD(dateISO).getDay()];return SUBS.filter(s=>s.day===dayName&&s.status==='On-Going'&&!subExpired(s)&&(!s.end||dateISO<=s.end)&&subOccursOn(s,dateISO));};
+/* ===== attachments (Supabase Storage) =====
+   Files live in the private `order-files` bucket; `orders.attachments` holds only the metadata
+   ({path,name,type,size}). Because the bucket is private, every view goes through a short-lived
+   signed URL — cached here so a board full of thumbnails doesn't re-sign on every render. */
+const FILES_BUCKET='order-files';
+const MAX_FILE_MB=15;
+const isImg=f=>/^image\//.test(f&&f.type||'');
+const orderFiles=o=>((o&&Array.isArray(o.files))?o.files:[]);
+const fmtSize=b=>{const n=Number(b)||0;return n<1024?n+' B':n<1048576?(n/1024).toFixed(0)+' KB':(n/1048576).toFixed(1)+' MB';};
+const signedCache=new Map();
+async function signedUrl(path){
+  const hit=signedCache.get(path);
+  if(hit&&hit.exp>Date.now())return hit.url;
+  const {data,error}=await db.storage.from(FILES_BUCKET).createSignedUrl(path,3600);
+  if(error||!data)return '';
+  signedCache.set(path,{url:data.signedUrl,exp:Date.now()+50*60*1000});
+  return data.signedUrl;
+}
+/* Phone cameras produce 4-8MB shots; nobody needs that for a reference photo, and the free
+   storage tier is 1GB. Downscale to 1600px JPEG before upload, silently keeping the original
+   if anything about the re-encode fails or doesn't actually save bytes. */
+async function shrinkImage(file){
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type))return file;
+  try{
+    const bmp=await createImageBitmap(file);
+    const scale=Math.min(1,1600/Math.max(bmp.width,bmp.height));
+    if(scale===1&&file.size<1.5*1024*1024)return file;
+    const c=document.createElement('canvas');
+    c.width=Math.round(bmp.width*scale); c.height=Math.round(bmp.height*scale);
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));
+    bmp.close&&bmp.close();
+    if(!blob||blob.size>=file.size)return file;
+    return new File([blob],file.name.replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'});
+  }catch(e){return file;}
+}
+const safeFileName=n=>String(n||'file').replace(/[^\w.\- ]+/g,'_').replace(/\s+/g,'_').slice(-60);
+async function removeStored(paths){
+  const list=(paths||[]).filter(Boolean);
+  if(!list.length)return;
+  await db.storage.from(FILES_BUCKET).remove(list);
+  list.forEach(p=>signedCache.delete(p));
+}
+function openFile(path){
+  const hit=signedCache.get(path);
+  if(hit&&hit.exp>Date.now())return void window.open(hit.url,'_blank','noopener');
+  const w=window.open('','_blank'); if(w)w.opener=null;
+  signedUrl(path).then(url=>{
+    if(!url){if(w)w.close();return toast('Could not open that file.');}
+    if(w)w.location.href=url; else window.open(url,'_blank','noopener');
+  });
+}
+/* Thumbnails can't be signed inside a template literal, so cards render a placeholder
+   <img data-thumb="path"> and this fills in the src once the board is in the DOM. */
+function hydrateThumbs(root){
+  (root||document).querySelectorAll('img[data-thumb]').forEach(async img=>{
+    const path=img.dataset.thumb; delete img.dataset.thumb;
+    const url=await signedUrl(path); if(url)img.src=url;
+  });
+}
+function filesRowHtml(o){
+  const fs=orderFiles(o); if(!fs.length)return '';
+  return `<div class="files-row">${fs.map(f=>`<button type="button" class="filechip" data-file="${esc(f.path)}" title="${esc(f.name)}">${
+    isImg(f)?`<img data-thumb="${esc(f.path)}" alt="" />`:'<span class="fdoc">📄</span>'
+  }<span>${esc(f.name)}</span></button>`).join('')}</div>`;
+}
+function contactChip(phone,label){
+  if(!phone)return '';
+  const wa=waNumber(phone);
+  return `<span class="contact"><span class="ctlab">${esc(label)}</span><a class="ctlink" href="tel:${phoneDigits(phone)}">☎ ${esc(phone)}</a>${wa?`<a class="ctlink wa" href="https://wa.me/${wa}" target="_blank" rel="noopener">WhatsApp</a>`:''}</span>`;
+}
+
 function orderCard(o){
   const m=STATUS_META[o.status]||STATUS_META.new;
   const cls=['card',o.status,o.urgent?'urgent':''].join(' ');
@@ -887,6 +998,9 @@ function orderCard(o){
     </div>`;
   const waN=waNumber(o.phone);
   const contactHtml=o.phone?`<span class="contact"><a class="ctlink" href="tel:${phoneDigits(o.phone)}">☎ ${esc(o.phone)}</a>${waN?`<a class="ctlink wa" href="https://wa.me/${waN}" target="_blank" rel="noopener">WhatsApp</a>`:''}</span>`:'';
+  /* Logistics opens the 📍 panel and needs the number to call on arrival: the receiver's if one
+     was given, and the customer's underneath it as the fallback contact. */
+  const addrContacts=[contactChip(o.recvPhone,'Receiver'),contactChip(o.phone,'Customer')].filter(Boolean).join('');
   const cxl=o.status==='cancelled';
   const nx=nextStage(o.status);
   const its=orderItems(o);
@@ -916,7 +1030,8 @@ function orderCard(o){
     ${flowers?`<div class="flowers">${esc(flowers)}</div>`:''}
     ${o.note?`<div class="note-line">✎ “${esc(o.note)}”</div>`:''}
     ${o.remarks?`<div class="remark-line">Remarks: ${esc(o.remarks)}</div>`:''}
-    <div class="addr" id="addr-${o.id}">📍 ${esc(o.addr)||'No address on file'}${contactHtml?'<div style="margin-top:7px">'+contactHtml+'</div>':''}</div>
+    ${filesRowHtml(o)}
+    <div class="addr" id="addr-${o.id}">📍 ${esc(o.addr)||'No address on file'}${addrContacts?`<div class="addr-contacts">${addrContacts}</div>`:''}</div>
     ${cxl?'':`<div class="stepper">${STAGE_FLOW.map((s,i)=>{const sm=STATUS_META[s];const st=i<STAGE_FLOW.indexOf(o.status)?'done':(s===o.status?'cur':'');return `<button class="step ${st}" data-step="${o.id}" data-s="${s}" style="--sc:${sm.color}" title="${sm.label}"><span class="sdot2"></span></button>`;}).join('')}</div>`}
     <div class="card-actions">
       ${nx&&!cxl?`<button class="advbtn" data-adv="${o.id}" data-next="${nx}">Mark ${STATUS_META[nx].label} →</button>`:''}
@@ -936,7 +1051,7 @@ function orderRow(o){
   const nx=nextStage(o.status), cxl=o.status==='cancelled';
   return `<div class="orow ${o.urgent&&!cxl?'urg':''} ${cxl?'cxl':''}" data-id="${o.id}">
     <div class="orow-main">
-      <div class="orow-cust">${o.urgent&&!cxl?'⚡ ':''}${esc(o.cust)||'—'}${o.polaQty?' 📷'+(o.polaQty>1?'×'+esc(o.polaQty):''):''}</div>
+      <div class="orow-cust">${o.urgent&&!cxl?'⚡ ':''}${esc(o.cust)||'—'}${o.polaQty?' 📷'+(o.polaQty>1?'×'+esc(o.polaQty):''):''}${orderFiles(o).length?' 📎':''}</div>
       <div class="orow-sub">${esc(o.no)||'#—'} · ${o.time?esc(o.time.split(' ')[0]):'—'} · ${esc(productLine(o))}</div>
     </div>
     <span class="orow-val">${fmtINR(o.val)}</span>
@@ -1017,6 +1132,8 @@ function bindCards(){
   document.querySelectorAll('[data-cxl]').forEach(b=>b.onclick=()=>confirmCancel(b,+b.dataset.cxl));
   document.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.restore,'new'));
   document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>confirmDelete(b,+b.dataset.del));
+  document.querySelectorAll('[data-file]').forEach(b=>b.onclick=()=>openFile(b.dataset.file));
+  hydrateThumbs();
 }
 function renderCurrent(){if(currentView==='home')renderHome();else if(currentView==='calendar'&&calUnlocked)renderCalendar();else if(currentView==='subs')renderSubs();else if(currentView==='products')renderProds();}
 
@@ -1029,9 +1146,10 @@ function changeStatus(id,s){
   if(!editUnlocked)return;
   const o=byId(id);if(!o)return;o.status=s;renderCurrent();
   const m=STATUS_META[s];
-  if(s==='dispatched') toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> — ready for dispatch. Logistics notified · 📍 ${esc(o.addr)||'address on file'}`);
+  const handoff=(o.addr||'address on file')+(o.recvPhone?' · ☎ '+o.recvPhone:'');
+  if(s==='dispatched') toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> — ready for dispatch. Logistics notified · 📍 ${esc(handoff)}`);
   else if(m) toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> — ${m.label}.`);
-  if(NOTIFY_LABEL[s]) osNotify(o.no,o.cust,NOTIFY_LABEL[s], s==='dispatched'?o.addr:'');
+  if(NOTIFY_LABEL[s]) osNotify(o.no,o.cust,NOTIFY_LABEL[s], s==='dispatched'?handoff:'');
   pushUpdate(id,{status:s});
 }
 let cxlArmed=null;
@@ -1053,7 +1171,7 @@ async function deleteOrder(id){
   const i=ORDERS.findIndex(x=>x.id===id);if(i>=0)ORDERS.splice(i,1);renderCurrent();
   const {error}=await db.from('orders').delete().eq('id',id);
   if(error){ORDERS.splice(i,0,o);renderCurrent();toast('Delete failed: '+esc(error.message));}
-  else toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> deleted.`);
+  else{removeStored(orderFiles(o).map(f=>f.path));toast(`<b>${esc(o.no)} · ${esc(o.cust)}</b> deleted.`);}
 }
 
 /* ===== reschedule ===== */
@@ -1382,11 +1500,61 @@ function toggleNoField(){
   else{fNo.readOnly=true;fNo.value='#'+NEXT_NO;hint.textContent='Auto-assigned for WhatsApp & walk-in orders.';}
 }
 document.getElementById('fSrc').onchange=toggleNoField;
+
+/* ===== attachment picker (form side) =====
+   Uploads land in storage the moment they're picked, so `formFiles` always mirrors what's on
+   disk. Two diffs keep the bucket tidy: closing without saving deletes everything uploaded in
+   this sitting, and saving deletes whatever the edit dropped. */
+let formFiles=[], formUploads=[], formFileKey='', formSaving=false;
+function fileKeyFor(id){return id!==null&&id!==undefined?('o'+id):('n'+Date.now().toString(36)+Math.random().toString(36).slice(2,7));}
+function renderFormFiles(){
+  const host=document.getElementById('fFileList'); if(!host)return;
+  host.innerHTML=formFiles.map((f,i)=>`<div class="fileitem"><button type="button" class="fopen" data-file="${esc(f.path)}" title="Open ${esc(f.name)}">${
+    isImg(f)?`<img class="fthumb" data-thumb="${esc(f.path)}" alt="" />`:'<span class="fdoc">📄</span>'
+  }<span class="fmeta"><span class="fname">${esc(f.name)}</span><span class="fsize">${esc(fmtSize(f.size))}</span></span></button><button type="button" class="frm" data-rmfile="${i}" aria-label="Remove ${esc(f.name)}">×</button></div>`).join('');
+  host.querySelectorAll('[data-rmfile]').forEach(b=>b.onclick=()=>{formFiles.splice(+b.dataset.rmfile,1);renderFormFiles();});
+  host.querySelectorAll('[data-file]').forEach(b=>b.onclick=()=>openFile(b.dataset.file));
+  hydrateThumbs(host);
+}
+async function addFormFiles(list){
+  const prog=document.getElementById('fFileProg');
+  const files=[...list];
+  for(let i=0;i<files.length;i++){
+    const raw=files[i];
+    if(raw.size>MAX_FILE_MB*1024*1024){toast(`<b>${esc(raw.name)}</b> is over ${MAX_FILE_MB}MB — skipped.`);continue;}
+    prog.textContent=`Uploading ${i+1} of ${files.length}…`;
+    const f=await shrinkImage(raw);
+    const path=`${formFileKey}/${Date.now().toString(36)}${Math.random().toString(36).slice(2,7)}-${safeFileName(f.name)}`;
+    const {error}=await db.storage.from(FILES_BUCKET).upload(path,f,{contentType:f.type||'application/octet-stream'});
+    if(error){prog.textContent='';toast('Upload failed: '+esc(error.message));continue;}
+    formUploads.push(path);
+    formFiles.push({path,name:f.name,type:f.type||'',size:f.size});
+    renderFormFiles();
+  }
+  prog.textContent='';
+}
+document.getElementById('fFileBtn').onclick=()=>document.getElementById('fFileInput').click();
+document.getElementById('fFileInput').onchange=async e=>{const l=e.target.files;e.target.value='';if(l&&l.length)await addFormFiles(l);};
+/* Abandoning the form (Cancel, ‹ Back, or the phone's back gesture) shouldn't leave uploads
+   stranded in the bucket with nothing pointing at them. */
+function discardFormUploads(){
+  if(formSaving||!formUploads.length){formUploads=[];return;}
+  const orphans=formUploads.slice(); formUploads=[];
+  removeStored(orphans);
+}
+function resetFormFiles(id){
+  formSaving=false; formUploads=[]; formFileKey=fileKeyFor(id);
+  formFiles=id===null?[]:orderFiles(byId(id)).map(f=>({...f}));
+  const prog=document.getElementById('fFileProg'); if(prog)prog.textContent='';
+  renderFormFiles();
+}
+
 function openAdd(){
   if(!requireEdit())return;
   editId=null;document.getElementById('formTitle').textContent='Add order';document.getElementById('formOno').textContent='';
   stagedItems=[];orderDiscount=null;orderDelivery=null;clearComposer();renderItems();
-  ['fCust','fPhone','fAddr','fNote','fRemarks'].forEach(id=>document.getElementById(id).value='');
+  ['fCust','fPhone','fAddr','fRecv','fNote','fRemarks'].forEach(id=>document.getElementById(id).value='');
+  resetFormFiles(null);
   setPolaQty(0);
   fillSelect('fSrc',SOURCES,'Whatsapp');fillSelect('fTrans',TRANSPORT,'2 Wheeler');fillSelect('fPay',PAYMENTS,'Paid');
   formMakers=[];formOwners=[];renderPeoplePickers();
@@ -1414,11 +1582,13 @@ function openEdit(id){
   renderPeoplePickers();
   const times=[...document.querySelectorAll('#fTime option')].map(x=>x.value);
   document.querySelector('#fTime').value=times.find(v=>o.time&&v.startsWith(o.time.split(' ')[0]))||'Afternoon (1pm–4pm)';
-  document.getElementById('fAddr').value=o.addr||'';document.getElementById('fNote').value=o.note||'';document.getElementById('fRemarks').value=o.remarks||'';
+  document.getElementById('fAddr').value=o.addr||'';document.getElementById('fRecv').value=o.recvPhone||'';
+  document.getElementById('fNote').value=o.note||'';document.getElementById('fRemarks').value=o.remarks||'';
+  resetFormFiles(id);
   document.getElementById('fUrgent').checked=!!o.urgent;
   openSheet('scrim');
 }
-function closeForm(){closeSheet('scrim');}
+function closeForm(){discardFormUploads();closeSheet('scrim');}
 function wireCombo(inputId,listId,itemsRef,onPick){
   const inp=document.getElementById(inputId),list=document.getElementById(listId);
   const getItems=()=>(typeof itemsRef==='function'?itemsRef():itemsRef)||[];
@@ -1454,11 +1624,16 @@ document.getElementById('saveAdd').onclick=async()=>{
   const common={cust,phone:document.getElementById('fPhone').value.trim(),det,type,items,discount,delivery:Math.max(0,Number(orderDelivery)||0),val:total,time:document.getElementById('fTime').value,
     od:document.getElementById('fOd').value,dd:document.getElementById('fDd').value,src:document.getElementById('fSrc').value,
     trans:document.getElementById('fTrans').value,pay:document.getElementById('fPay').value,makers:formMakers.slice(),owners:formOwners.slice(),maker:formMakers.join(', '),
-    addr:document.getElementById('fAddr').value.trim(),note:document.getElementById('fNote').value.trim(),
+    addr:document.getElementById('fAddr').value.trim(),recvPhone:document.getElementById('fRecv').value.trim(),
+    files:formFiles.map(f=>({path:f.path,name:f.name,type:f.type||'',size:Number(f.size)||0})),note:document.getElementById('fNote').value.trim(),
     remarks:document.getElementById('fRemarks').value.trim(),polaQty:readPolaQty(),polaroid:readPolaQty()>0,
     urgent:document.getElementById('fUrgent').checked};
   if(editId!==null){
-    const o=byId(editId);if(!o)return;Object.assign(o,common,{no:document.getElementById('fNo').value.trim()||o.no});closeForm();renderCurrent();
+    const o=byId(editId);if(!o)return;
+    const dropped=orderFiles(o).map(f=>f.path).filter(pth=>!common.files.some(f=>f.path===pth));
+    formSaving=true;
+    Object.assign(o,common,{no:document.getElementById('fNo').value.trim()||o.no});closeForm();renderCurrent();
+    if(dropped.length)removeStored(dropped);
     const {error}=await db.from('orders').update(toDB(o)).eq('id',editId);
     toast(error?('Update failed: '+esc(error.message)):`Updated ${esc(o.no)} · ${esc(cust)}.`);
   }else{
@@ -1466,8 +1641,9 @@ document.getElementById('saveAdd').onclick=async()=>{
     let no,usedAuto=false;
     if(src==='Website'&&typed&&typed!=='#'+NEXT_NO){no=typed;} else {no='#'+NEXT_NO;usedAuto=true;}
     const o={no,status:'new',...common};
+    formSaving=true;
     const {data,error}=await db.from('orders').insert(toDB(o)).select().single();
-    if(error)return toast('Save failed: '+esc(error.message));
+    if(error){formSaving=false;return toast('Save failed: '+esc(error.message));}
     if(usedAuto)NEXT_NO++;
     const added=fromDB(data);ORDERS.push(added);recomputeRepeat();closeForm();setRange(added.dd,added.dd<rangeToSafe()?rangeToSafe():added.dd);
     toast(`<b>${esc(added.no)}</b> · ${esc(cust)} added — ${esc(det)}${items.length>1?` (${items.length} items)`:''}.${added.polaQty?' 📷'+(added.polaQty>1?'×'+esc(added.polaQty):''):''}${added.urgent?' ⚡ Urgent.':''}`);
@@ -1513,8 +1689,9 @@ function osNotify(no,cust,label,addr){
 function notifyStatus(nw){
   const label=NOTIFY_LABEL[nw.status];if(!label)return;
   const who=nw.customer_name||'', showAddr=nw.status==='dispatched'&&nw.address;
-  toast(`<b>${esc(nw.order_no)} · ${esc(who)}</b> — ${esc(label)}${showAddr?' · 📍 '+esc(nw.address):''}`);
-  osNotify(nw.order_no,who,label,showAddr?nw.address:'');
+  const where=showAddr?(nw.address+(nw.receiver_phone?' · ☎ '+nw.receiver_phone:'')):'';
+  toast(`<b>${esc(nw.order_no)} · ${esc(who)}</b> — ${esc(label)}${where?' · 📍 '+esc(where):''}`);
+  osNotify(nw.order_no,who,label,where);
 }
 function startRealtime(){
   db.channel('orders-live').on('postgres_changes',{event:'*',schema:'public',table:'orders'},payload=>{
@@ -1556,7 +1733,7 @@ scrim.onclick=e=>{if(e.target===scrim)closeForm();};
 /* mobile back handling for sheets */
 function openSheet(id){document.getElementById(id).classList.add('show');history.pushState({sheet:id},'');}
 function closeSheet(id){const el=document.getElementById(id);if(!el||!el.classList.contains('show'))return;if(history.state&&history.state.sheet){history.back();}else{el.classList.remove('show');}}
-window.addEventListener('popstate',()=>{document.querySelectorAll('.scrim.show').forEach(el=>el.classList.remove('show'));});
+window.addEventListener('popstate',()=>{const form=document.getElementById('scrim');if(form&&form.classList.contains('show'))discardFormUploads();document.querySelectorAll('.scrim.show').forEach(el=>el.classList.remove('show'));});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeSheet(b.dataset.close));
 const dFrom=document.getElementById('dateFrom'),dTo=document.getElementById('dateTo');
 function syncRange(){dFrom.value=rangeFrom;dTo.value=rangeToSafe();}
