@@ -4,3 +4,10 @@ import_july_2026.sql
 *.xlsx
 *.xls
 *.csv
+
+# --- backup/ ---
+# Raw exports contain customer PII (names, phones, addresses). Never commit;
+# the repo is the Vercel deploy source. Encrypted copies in backup/encrypted/ ARE tracked.
+backup/data/*
+!backup/data/.gitkeep
+backup/**/*.creds
