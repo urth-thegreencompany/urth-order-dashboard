@@ -272,14 +272,16 @@
   .stab .scount{background:#EDE3D5;color:var(--green);border-radius:999px;font-size:11px;font-weight:800;padding:1px 7px}
   .stab.on{background:var(--sbg);border-color:var(--sc)}
   .stab.on .scount{background:var(--sc);color:#fff}
-  .tabs-label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--green-soft);font-weight:800;margin:9px 2px 1px}
-  .item-pick{margin:9px 0 4px;max-width:340px}
-  .item-pick select{width:100%;font-family:var(--sans);font-size:13.5px;font-weight:700;color:var(--green);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
-  .item-pick select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(44,74,56,.10)}
-  /* A dropdown is quieter than a highlighted chip, so an active filter recolours the whole
-     control — otherwise it's easy to leave the board filtered and not notice. */
-  .item-pick.on select{background:var(--forest);color:#F4ECE2;border-color:var(--forest)}
-  .item-pick .clear-item{margin-top:6px;font-size:11.5px;font-weight:700;color:var(--clay);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}
+  /* The All chip doubles as the item filter: same chip shell, but the label is a <select> whose
+     options are the item buckets. Keeps the breakdown in the row it belongs to instead of a
+     second section, and native selects drop their list right under the chip. */
+  /* Zero padding on the shell and full padding on the select, so the whole chip is the tap
+     target — a native select can't be opened from JS, so any padding outside it is a dead zone. */
+  .stab-sel{position:relative;padding:0;gap:0}
+  .stab-sel select{appearance:none;-webkit-appearance:none;border:none;background:none;font-family:var(--sans);font-size:13px;font-weight:700;color:inherit;padding:8px 27px 8px 14px;margin:0;cursor:pointer;outline:none;max-width:210px;text-overflow:ellipsis}
+  .stab-sel::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;opacity:.65;pointer-events:none}
+  /* An item filter is easy to leave on by accident, so it recolours the chip outright. */
+  .stab-sel.filtering{background:var(--forest);border-color:var(--forest);color:#F4ECE2}
   .statuspill{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.3px;white-space:nowrap}
   .badge.pola{background:#3C4A5E;color:#fff}
   .note-line{font-size:12.5px;color:var(--ink);margin-top:8px;background:#F3EAD9;border-left:3px solid var(--clay);border-radius:8px;padding:7px 10px}
@@ -470,11 +472,6 @@
       </div>
       <div class="kpis" id="kpis"></div>
       <div class="status-tabs" id="statusTabs"></div>
-      <div class="item-pick" id="itemPick" style="display:none">
-        <div class="tabs-label" style="margin:0 2px 4px">What’s being made</div>
-        <select id="itemSelect" aria-label="Filter the board by item"></select>
-        <button type="button" class="clear-item" id="clearItem" style="display:none">Clear filter — show all items</button>
-      </div>
       <div class="sec-head"><h2 id="homeHeading">Upcoming</h2>
         <div class="head-actions"><div class="density-toggle" id="densityToggle"></div><button class="btn" id="addBtn">+ Add order</button></div>
       </div>
@@ -940,39 +937,42 @@ function renderKPIs(){
 function renderStatusTabs(){
   const all=inRange(); const counts={all:all.length};
   Object.keys(STATUS_META).forEach(k=>counts[k]=all.filter(o=>o.status===k).length);
-  const tabs=[['all','All','#687259','#E4EADF']].concat(Object.entries(STATUS_META).map(([k,m])=>[k,m.label,m.color,m.bg]));
+  /* Item buckets ride inside the All chip. Counted against the status filter but NOT the item
+     filter, so choosing one bucket doesn't zero out every other option in the list. */
+  const base=all.filter(o=>statusFilter==='all'?o.status!=='cancelled':o.status===statusFilter);
+  const items=new Map();
+  base.forEach(o=>orderItems(o).forEach(it=>{
+    const bk=itemBucket(it); items.set(bk,(items.get(bk)||0)+itemQty(it));
+  }));
+  /* Keep a selected bucket listed even once the range no longer holds it, so the chip always
+     shows what is actually filtering the board instead of silently losing the filter. */
+  if(itemFilter&&!items.has(itemFilter))items.set(itemFilter,0);
+  /* biggest first, alphabetical within a tie, so the list doesn't reshuffle on every render */
+  const rows=[...items.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const allOn=statusFilter==='all'&&!itemFilter;
+  const allChip=`<span class="stab stab-sel ${allOn?'on':''} ${itemFilter?'filtering':''}" style="--sc:#687259;--sbg:#E4EADF">`
+    +`<select id="allSelect" aria-label="Show everything, or filter by item">`
+    +`<option value="">All (${counts.all})</option>`
+    +(rows.length?`<optgroup label="By item">${rows.map(([bk,n])=>`<option value="i:${esc(bk)}">${esc(bk)} (${n})</option>`).join('')}</optgroup>`:'')
+    +`</select></span>`;
   const el=document.getElementById('statusTabs');
-  el.innerHTML=tabs.map(([k,label,color,bg])=>`<button class="stab ${statusFilter===k?'on':''}" data-stab="${k}" style="--sc:${color};--sbg:${bg}"><span class="sdot"></span>${label}<span class="scount">${counts[k]}</span></button>`).join('');
+  el.innerHTML=allChip+Object.entries(STATUS_META).map(([k,m])=>
+    `<button class="stab ${statusFilter===k?'on':''}" data-stab="${k}" style="--sc:${m.color};--sbg:${m.bg}"><span class="sdot"></span>${m.label}<span class="scount">${counts[k]}</span></button>`).join('');
+  const sel=document.getElementById('allSelect');
+  sel.value=itemFilter?('i:'+itemFilter):'';
+  sel.onchange=()=>{
+    const v=sel.value;
+    /* "All" is the way back to everything — it clears the status filter too, not just the item. */
+    if(!v){statusFilter='all';itemFilter='';}
+    else itemFilter=v.slice(2);
+    renderHome();
+  };
   el.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{statusFilter=b.dataset.stab;renderHome();});
 }
 
 /* Counts are computed against the status filter but NOT the item filter, so the numbers stay
    put when a bucket is selected — otherwise picking "Verona" would zero out every other chip. */
-function renderItemPicker(){
-  const base=inRange().filter(o=>statusFilter==='all'?o.status!=='cancelled':o.status===statusFilter);
-  const counts=new Map();
-  base.forEach(o=>orderItems(o).forEach(it=>{
-    const b=itemBucket(it); counts.set(b,(counts.get(b)||0)+itemQty(it));
-  }));
-  const wrap=document.getElementById('itemPick'), sel=document.getElementById('itemSelect'),
-        clr=document.getElementById('clearItem');
-  if(!wrap||!sel)return;
-  if(!counts.size&&!itemFilter){wrap.style.display='none';sel.innerHTML='';return;}
-  wrap.style.display='';
-  const total=[...counts.values()].reduce((a,n)=>a+n,0);   /* before any zero placeholder is added */
-  /* Keep a selected bucket listed even when the range no longer holds it, so the dropdown always
-     shows what is actually filtering the board rather than silently losing the filter. */
-  if(itemFilter&&!counts.has(itemFilter))counts.set(itemFilter,0);
-  /* biggest first, alphabetical within a tie, so the list doesn't reshuffle on every render */
-  const rows=[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-  sel.innerHTML=`<option value="">All items (${total})</option>`
-    +rows.map(([b,n])=>`<option value="${esc(b)}">${esc(b)} (${n})</option>`).join('');
-  sel.value=itemFilter;
-  wrap.classList.toggle('on',!!itemFilter);
-  if(clr)clr.style.display=itemFilter?'':'none';
-  sel.onchange=()=>{itemFilter=sel.value;renderHome();};
-  if(clr)clr.onclick=()=>{itemFilter='';renderHome();};
-}
+
 
 /* ===== HOME ===== */
 /* whether a subscription actually has a delivery on this date, per its frequency — not just "day of week matches" */
@@ -1176,7 +1176,7 @@ function renderDensityToggle(){
 function clearSearchState(){searchQuery='';const el=document.getElementById('orderSearch');if(el)el.value='';}
 function clearSearch(){clearSearchState();renderHome();}
 function renderHome(){
-  renderAttention(); renderKPIs(); renderStatusTabs(); renderItemPicker(); renderPresets(); renderDensityToggle();
+  renderAttention(); renderKPIs(); renderStatusTabs(); renderPresets(); renderDensityToggle();
   const host=document.getElementById('days'), heading=document.getElementById('homeHeading');
   if(searchQuery.trim()){
     if(heading)heading.textContent='Search results';
