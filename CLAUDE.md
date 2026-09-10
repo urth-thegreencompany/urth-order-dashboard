@@ -207,14 +207,33 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
 - **PII hygiene**: `*.xlsx`, `*.csv`, the legacy import SQL, and `Branding/` are gitignored —
   customer exports must never be committed. The repo also serves as the deploy source, so
   anything tracked is one push away from being public-adjacent.
-- **Known gap (needs owner action in Supabase Dashboard)**: public email signup was found ENABLED
-  (`disable_signup: false`). Anyone with the (public) anon key can self-register and become an
-  `authenticated` user with full RLS read/write. Fix: Dashboard → Authentication → Sign In / Providers
-  → turn OFF "Allow new users to sign up". Verify with
+- **Public signup: CLOSED** (re-verified 2026-09-10). `disable_signup` is now `true`, so nobody
+  can self-register against the public anon key. This was previously an open gap; it is fixed.
+  Re-check any time with
   `curl -s $SB_URL/auth/v1/settings -H "apikey: $ANON_KEY"` → `"disable_signup":true`.
+- RLS confirmed enforcing (2026-09-10): anon-key reads return `[]` on every table, so the
+  embedded key genuinely reads nothing without a staff session.
 - Favicons (`assets/favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`) are generated
   from `Branding/Logo/Symbol/PNG/Symbol colour.png` via Pillow (trim bbox → fit square; the
   apple icon gets a solid Ivory background).
+
+## Account access & backups (as of 2026-09-10)
+
+- **The Supabase dashboard account is locked out.** It was created with "Sign in with GitHub"
+  using a personal GitHub account that has since been permanently deleted; password reset is
+  refused because the account has no password. Recovery is with Supabase Support.
+  The **app is unaffected** — dashboard access and staff auth are separate systems.
+- Consequence: **no migrations can be run.** Three are pending, so `attachments`,
+  `receiver_phone` and `polaroid_qty` are shipped in the code but dormant in production
+  (the `HAS_*` probes hide them). See `backup/schema/MIGRATION-STATUS.md`.
+- **`backup/` holds the disaster-recovery kit**: `export.py` (all data + attachments via a
+  staff login), `encrypt.sh`/`decrypt.sh`, `schema/schema.sql` (rebuild from zero), plus
+  `HANDOFF.md` and `OWNERSHIP-MIGRATION.md`. Raw exports land in gitignored `backup/data/`;
+  only encrypted copies are tracked.
+- **Goal in progress**: move Supabase + Vercel from the owner's personal accounts to the
+  company setup. Runbook in `backup/OWNERSHIP-MIGRATION.md` — transfer, never rebuild.
+- Staff **login accounts cannot be exported** (needs `service_role`/dashboard). They are the
+  one unbackupable piece and must be recreated by hand after any restore.
 
 ## Working conventions
 - Keep this a single-file app unless there's a strong reason to split it — simplicity was a
