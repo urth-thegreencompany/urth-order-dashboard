@@ -273,12 +273,13 @@
   .stab.on{background:var(--sbg);border-color:var(--sc)}
   .stab.on .scount{background:var(--sc);color:#fff}
   .tabs-label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--green-soft);font-weight:800;margin:9px 2px 1px}
-  .item-tabs{display:flex;gap:8px;overflow-x:auto;padding:3px 2px 5px;margin:0 0 2px;-webkit-overflow-scrolling:touch}
-  .item-tabs::-webkit-scrollbar{height:0}
-  .itab{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:#fff;color:var(--green);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700;white-space:nowrap;cursor:pointer}
-  .itab .icount{background:#EDE3D5;color:var(--green);border-radius:999px;font-size:11px;font-weight:800;padding:1px 7px}
-  .itab.on{background:var(--forest);color:#F4ECE2;border-color:var(--forest)}
-  .itab.on .icount{background:rgba(244,236,226,.20);color:#F4ECE2}
+  .item-pick{margin:9px 0 4px;max-width:340px}
+  .item-pick select{width:100%;font-family:var(--sans);font-size:13.5px;font-weight:700;color:var(--green);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+  .item-pick select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(44,74,56,.10)}
+  /* A dropdown is quieter than a highlighted chip, so an active filter recolours the whole
+     control — otherwise it's easy to leave the board filtered and not notice. */
+  .item-pick.on select{background:var(--forest);color:#F4ECE2;border-color:var(--forest)}
+  .item-pick .clear-item{margin-top:6px;font-size:11.5px;font-weight:700;color:var(--clay);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}
   .statuspill{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.3px;white-space:nowrap}
   .badge.pola{background:#3C4A5E;color:#fff}
   .note-line{font-size:12.5px;color:var(--ink);margin-top:8px;background:#F3EAD9;border-left:3px solid var(--clay);border-radius:8px;padding:7px 10px}
@@ -469,8 +470,11 @@
       </div>
       <div class="kpis" id="kpis"></div>
       <div class="status-tabs" id="statusTabs"></div>
-      <div class="tabs-label" id="itemTabsLabel" style="display:none">What’s being made</div>
-      <div class="item-tabs" id="itemTabs"></div>
+      <div class="item-pick" id="itemPick" style="display:none">
+        <div class="tabs-label" style="margin:0 2px 4px">What’s being made</div>
+        <select id="itemSelect" aria-label="Filter the board by item"></select>
+        <button type="button" class="clear-item" id="clearItem" style="display:none">Clear filter — show all items</button>
+      </div>
       <div class="sec-head"><h2 id="homeHeading">Upcoming</h2>
         <div class="head-actions"><div class="density-toggle" id="densityToggle"></div><button class="btn" id="addBtn">+ Add order</button></div>
       </div>
@@ -944,27 +948,30 @@ function renderStatusTabs(){
 
 /* Counts are computed against the status filter but NOT the item filter, so the numbers stay
    put when a bucket is selected — otherwise picking "Verona" would zero out every other chip. */
-function renderItemTabs(){
+function renderItemPicker(){
   const base=inRange().filter(o=>statusFilter==='all'?o.status!=='cancelled':o.status===statusFilter);
   const counts=new Map();
   base.forEach(o=>orderItems(o).forEach(it=>{
     const b=itemBucket(it); counts.set(b,(counts.get(b)||0)+itemQty(it));
   }));
-  const el=document.getElementById('itemTabs'), lab=document.getElementById('itemTabsLabel');
-  if(!el)return;
-  if(!counts.size){el.innerHTML='';if(lab)lab.style.display='none';return;}
-  if(lab)lab.style.display='';
+  const wrap=document.getElementById('itemPick'), sel=document.getElementById('itemSelect'),
+        clr=document.getElementById('clearItem');
+  if(!wrap||!sel)return;
+  if(!counts.size&&!itemFilter){wrap.style.display='none';sel.innerHTML='';return;}
+  wrap.style.display='';
   const total=[...counts.values()].reduce((a,n)=>a+n,0);   /* before any zero placeholder is added */
-  /* biggest first, alphabetical within a tie, so the row doesn't reshuffle on every render */
+  /* Keep a selected bucket listed even when the range no longer holds it, so the dropdown always
+     shows what is actually filtering the board rather than silently losing the filter. */
   if(itemFilter&&!counts.has(itemFilter))counts.set(itemFilter,0);
+  /* biggest first, alphabetical within a tie, so the list doesn't reshuffle on every render */
   const rows=[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-  el.innerHTML=`<button class="itab ${itemFilter?'':'on'}" data-itab="">All items<span class="icount">${total}</span></button>`
-    +rows.map(([b,n])=>`<button class="itab ${itemFilter===b?'on':''}" data-itab="${esc(b)}">${esc(b)}<span class="icount">${n}</span></button>`).join('');
-  el.querySelectorAll('[data-itab]').forEach(btn=>btn.onclick=()=>{
-    const v=btn.dataset.itab;
-    itemFilter=(v&&v===itemFilter)?'':v;   /* tapping the active chip clears it */
-    renderHome();
-  });
+  sel.innerHTML=`<option value="">All items (${total})</option>`
+    +rows.map(([b,n])=>`<option value="${esc(b)}">${esc(b)} (${n})</option>`).join('');
+  sel.value=itemFilter;
+  wrap.classList.toggle('on',!!itemFilter);
+  if(clr)clr.style.display=itemFilter?'':'none';
+  sel.onchange=()=>{itemFilter=sel.value;renderHome();};
+  if(clr)clr.onclick=()=>{itemFilter='';renderHome();};
 }
 
 /* ===== HOME ===== */
@@ -1169,7 +1176,7 @@ function renderDensityToggle(){
 function clearSearchState(){searchQuery='';const el=document.getElementById('orderSearch');if(el)el.value='';}
 function clearSearch(){clearSearchState();renderHome();}
 function renderHome(){
-  renderAttention(); renderKPIs(); renderStatusTabs(); renderItemTabs(); renderPresets(); renderDensityToggle();
+  renderAttention(); renderKPIs(); renderStatusTabs(); renderItemPicker(); renderPresets(); renderDensityToggle();
   const host=document.getElementById('days'), heading=document.getElementById('homeHeading');
   if(searchQuery.trim()){
     if(heading)heading.textContent='Search results';

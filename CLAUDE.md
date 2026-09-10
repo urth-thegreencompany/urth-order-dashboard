@@ -159,17 +159,21 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
   - **Quick advance**: each card/row has a "Mark <next stage> →" button; the in-card **status
     stepper** (segmented bar over new→…→delivered) is tappable to jump stages. Status is advanced
     via `changeStatus`, which persists + toasts + is realtime-safe.
-  - **Item breakdown** ("What's being made"): a second chip row under the status tabs counting
+  - **Item breakdown** ("What's being made"): a dropdown under the status tabs counting
     **items × qty**, not orders — one order holding a Verona and two plants contributes to three
     buckets. Bucketing (`itemBucket`): catalogue lines bucket by product name (Verona, Snowbell, a
     named planter, since `det` *is* the name there); Custom → "Custom Bouquet", Vase Arrangement →
     "Custom Vase", Loose/Subscription collapse to the type, because their `det` is free text that
     is unique per order and would make a bucket of one every time. Plants and dry flowers keep
-    their `det` ("Plant — Monstera"), already short and specific. Tapping a chip filters the board
-    via `itemFilter` in `passFilters`; tapping the active chip clears it. Counts are computed
+    their `det` ("Plant — Monstera"), already short and specific. Picking an option filters the
+    board via `itemFilter` in `passFilters`. It was a chip row first, but the row overflowed the
+    moment a range held more than a handful of products — a `<select>` holds any number and gives
+    mobile the native wheel picker. Because a dropdown reads much quieter than a highlighted chip,
+    an active filter recolours the whole control (`.item-pick.on`) and reveals a "Clear filter"
+    link, so the board is never left filtered without it being obvious. Counts are computed
     against the status filter but *not* the item filter, so selecting one bucket doesn't zero out
-    every other chip, and an active bucket the range no longer contains is still rendered at 0 so
-    there's always something to tap to get out.
+    every other option, and a selected bucket the range no longer contains is still listed at 0
+    rather than silently dropping the filter.
   - **Density toggle** (cards vs compact list), persisted in `localStorage` under `urth_density`.
 - Mobile: a fixed **bottom nav** (Home/Calendar/Subs/Products) plus a floating **+ FAB** replace the
   top tabs and header "Add order" button on ≤760px screens (mobile is the primary surface).
