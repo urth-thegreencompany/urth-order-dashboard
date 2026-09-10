@@ -142,7 +142,10 @@
   .vis-hidden:focus-visible+label.addbtn{outline:2px solid var(--green); outline-offset:2px}
   .fileprog{font-size:12px; color:var(--green-soft); font-style:italic}
   .fileprog.err{color:var(--urgent); font-style:normal; font-weight:700}
-  .files-row{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
+  .files-panel{margin-top:8px; background:#EFE6D9; border-radius:10px; padding:8px 10px; display:none}
+  .files-panel.show{display:block}
+  .files-panel .fp-head{font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--green-soft); margin-bottom:7px}
+  .files-row{display:flex; flex-wrap:wrap; gap:7px}
   .filechip{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:#fff; border-radius:10px; padding:4px 9px 4px 4px; font-size:12px; font-weight:700; color:var(--green); cursor:pointer; max-width:100%}
   .filechip img{width:30px; height:30px; border-radius:6px; object-fit:cover; background:var(--cream-2); display:block; flex:none}
   .filechip .fdoc{width:30px; height:30px; border-radius:6px; background:#F3EAD9; display:flex; align-items:center; justify-content:center; font-size:15px; flex:none}
@@ -981,11 +984,14 @@ function hydrateThumbs(root){
     const url=await signedUrl(path); if(url)img.src=url;
   });
 }
-function filesRowHtml(o){
+/* Collapsed by default behind the 📎 button, like the address behind 📍 — a board of 40 orders
+   shouldn't be a wall of thumbnails. Thumbnails are signed lazily on first open for the same
+   reason: opening one card shouldn't mint signed URLs for every file on the board. */
+function filesPanelHtml(o){
   const fs=orderFiles(o); if(!fs.length)return '';
-  return `<div class="files-row">${fs.map(f=>`<button type="button" class="filechip" data-file="${esc(f.path)}" title="${esc(f.name)}">${
+  return `<div class="files-panel" id="files-${o.id}"><div class="fp-head">${fs.length} attachment${fs.length!==1?'s':''}</div><div class="files-row">${fs.map(f=>`<button type="button" class="filechip" data-file="${esc(f.path)}" title="${esc(f.name)}">${
     isImg(f)?`<img data-thumb="${esc(f.path)}" alt="" />`:'<span class="fdoc">📄</span>'
-  }<span>${esc(f.name)}</span></button>`).join('')}</div>`;
+  }<span>${esc(f.name)}</span></button>`).join('')}</div></div>`;
 }
 function contactChip(phone,label){
   if(!phone)return '';
@@ -1037,7 +1043,7 @@ function orderCard(o){
     ${flowers?`<div class="flowers">${esc(flowers)}</div>`:''}
     ${o.note?`<div class="note-line">✎ “${esc(o.note)}”</div>`:''}
     ${o.remarks?`<div class="remark-line">Remarks: ${esc(o.remarks)}</div>`:''}
-    ${filesRowHtml(o)}
+    ${filesPanelHtml(o)}
     <div class="addr" id="addr-${o.id}">📍 ${esc(o.addr)||'No address on file'}${addrContacts?`<div class="addr-contacts">${addrContacts}</div>`:''}</div>
     ${cxl?'':`<div class="stepper">${STAGE_FLOW.map((s,i)=>{const sm=STATUS_META[s];const st=i<STAGE_FLOW.indexOf(o.status)?'done':(s===o.status?'cur':'');return `<button class="step ${st}" data-step="${o.id}" data-s="${s}" style="--sc:${sm.color}" title="${sm.label}"><span class="sdot2"></span></button>`;}).join('')}</div>`}
     <div class="card-actions">
@@ -1046,6 +1052,7 @@ function orderCard(o){
       <select class="mini" data-addowner="${o.id}"><option value="">＋ owner</option>${OWNERS.filter(nm=>!owners.includes(nm)).map(nm=>`<option>${esc(nm)}</option>`).join('')}</select>
       <button class="iconbtn ${o.urgent?'on':''}" data-urg="${o.id}" title="Urgent" aria-label="Toggle urgent" aria-pressed="${o.urgent}">⚡</button>
       <button class="iconbtn" data-addr="${o.id}" title="Address" aria-label="Show address">📍</button>
+      ${orderFiles(o).length?`<button class="iconbtn" data-files="${o.id}" title="Attachments" aria-label="Show attachments">📎 ${orderFiles(o).length}</button>`:''}
       ${cxl?`<button class="iconbtn" data-restore="${o.id}">Restore</button>`
            :`<button class="iconbtn" data-resc="${o.id}">Reschedule</button><button class="iconbtn danger" data-cxl="${o.id}">Cancel</button>`}
       <button class="iconbtn" data-edit="${o.id}">Edit</button>
@@ -1140,7 +1147,11 @@ function bindCards(){
   document.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.restore,'new'));
   document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>confirmDelete(b,+b.dataset.del));
   document.querySelectorAll('[data-file]').forEach(b=>b.onclick=()=>openFile(b.dataset.file));
-  hydrateThumbs();
+  document.querySelectorAll('[data-files]').forEach(b=>b.onclick=()=>{
+    const panel=document.getElementById('files-'+b.dataset.files); if(!panel)return;
+    panel.classList.toggle('show');
+    if(panel.classList.contains('show'))hydrateThumbs(panel);
+  });
 }
 function renderCurrent(){if(currentView==='home')renderHome();else if(currentView==='calendar'&&calUnlocked)renderCalendar();else if(currentView==='subs')renderSubs();else if(currentView==='products')renderProds();}
 
