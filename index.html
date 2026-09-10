@@ -882,15 +882,21 @@ const inRange=()=>ORDERS.filter(o=>o.dd>=rangeFrom&&o.dd<=rangeToSafe());
 function daysInRange(){let a=[],d=rangeFrom,g=0;const to=rangeToSafe();while(d<=to&&g<120){a.push(d);d=addDays(d,1);g++;}return a;}
 const rangeLabel=()=> rangeFrom===rangeToSafe()?fmtDayDate(rangeFrom):(shortD(rangeFrom)+' – '+shortD(rangeToSafe()));
 
-/* ===== KPIs (over range; top-product and revenue tiles removed) ===== */
+/* ===== KPIs =====
+   Range-scoped, with one deliberate exception: Today's total is pinned to today's date whatever
+   range is selected, so the day's takings stay on screen while the board is browsed forward. */
 function renderKPIs(){
   const all=inRange(), act=all.filter(o=>o.status!=='cancelled');
   const cancelled=all.length-act.length;
   const wa=act.filter(o=>/whatsapp/i.test(o.src)).length,wi=act.filter(o=>/walk/i.test(o.src)).length,wb=act.filter(o=>/website/i.test(o.src)).length;
   const pend=act.filter(o=>/pending/i.test(o.pay)),pendAmt=pend.reduce((a,o)=>a+(o.val||0),0);
   const ready=act.filter(o=>o.status==='dispatched'||o.status==='ready').length;
+  /* Off ORDERS, not the range-filtered list, so it holds when the range moves off today. */
+  const tdy=todayISO();
+  const todayAmt=ORDERS.filter(o=>o.dd===tdy&&o.status!=='cancelled').reduce((a,o)=>a+(o.val||0),0);
   const K=[
     {lab:'Orders',val:act.length,foot:rangeLabel()+(cancelled?(' · '+cancelled+' cancelled'):'')},
+    {lab:'Today’s total',val:fmtINR(todayAmt),foot:shortD(tdy)},
     {lab:'Source mix',val:`${wa}<small> WA</small> ${wi}<small> WI</small> ${wb}<small> Web</small>`,foot:'WhatsApp·Walk-in·Web'},
     {lab:'Pending payments',val:pend.length,foot:fmtINR(pendAmt)+' to chase',accent:pend.length>0},
     {lab:'Ready for dispatch',val:ready,foot:'ready / dispatched'},

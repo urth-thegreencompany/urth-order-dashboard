@@ -150,6 +150,12 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
   - **Range presets** (Today · Next 3 days · This week · This month) and a **"+N more scheduled
     beyond this range →"** footer so future-dated orders aren't hidden by the default today→+3 window.
   - **Filters** (maker / source / payment) narrow the board; KPIs stay range-scoped so totals hold.
+  - **KPI tiles** are range-scoped with one deliberate exception: **Today's total** (the ₹ value of
+    today's non-cancelled orders) is pinned to today's date whatever range is selected, so the
+    day's takings stay visible while the board is browsed forward. It reads off `ORDERS`, not the
+    range-filtered list — filtering it by range would blank it the moment the range moves off
+    today. This is not a revival of the old range-wide Revenue KPI, which was dropped in `d678b15`
+    and stays dropped.
   - **Quick advance**: each card/row has a "Mark <next stage> →" button; the in-card **status
     stepper** (segmented bar over new→…→delivered) is tappable to jump stages. Status is advanced
     via `changeStatus`, which persists + toasts + is realtime-safe.
