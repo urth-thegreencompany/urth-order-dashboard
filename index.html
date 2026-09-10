@@ -272,16 +272,6 @@
   .stab .scount{background:#EDE3D5;color:var(--green);border-radius:999px;font-size:11px;font-weight:800;padding:1px 7px}
   .stab.on{background:var(--sbg);border-color:var(--sc)}
   .stab.on .scount{background:var(--sc);color:#fff}
-  /* The All chip doubles as the item filter: same chip shell, but the label is a <select> whose
-     options are the item buckets. Keeps the breakdown in the row it belongs to instead of a
-     second section, and native selects drop their list right under the chip. */
-  /* Zero padding on the shell and full padding on the select, so the whole chip is the tap
-     target — a native select can't be opened from JS, so any padding outside it is a dead zone. */
-  .stab-sel{position:relative;padding:0;gap:0}
-  .stab-sel select{appearance:none;-webkit-appearance:none;border:none;background:none;font-family:var(--sans);font-size:13px;font-weight:700;color:inherit;padding:8px 27px 8px 14px;margin:0;cursor:pointer;outline:none;max-width:210px;text-overflow:ellipsis}
-  .stab-sel::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;opacity:.65;pointer-events:none}
-  /* An item filter is easy to leave on by accident, so it recolours the chip outright. */
-  .stab-sel.filtering{background:var(--forest);border-color:var(--forest);color:#F4ECE2}
   .statuspill{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.3px;white-space:nowrap}
   .badge.pola{background:#3C4A5E;color:#fff}
   .note-line{font-size:12.5px;color:var(--ink);margin-top:8px;background:#F3EAD9;border-left:3px solid var(--clay);border-radius:8px;padding:7px 10px}
@@ -472,6 +462,7 @@
       </div>
       <div class="kpis" id="kpis"></div>
       <div class="status-tabs" id="statusTabs"></div>
+      <div class="status-tabs" id="itemTabs" style="display:none"></div>
       <div class="sec-head"><h2 id="homeHeading">Upcoming</h2>
         <div class="head-actions"><div class="density-toggle" id="densityToggle"></div><button class="btn" id="addBtn">+ Add order</button></div>
       </div>
@@ -762,7 +753,7 @@ function addDays(s,n){const p=s.split('-').map(Number);const d=new Date(Date.UTC
 
 /* ===== live state ===== */
 let ORDERS=[], CATALOG=[], LOOSE=[], SUBS=[];
-let rangeFrom=todayISO(), rangeTo=addDays(todayISO(),3), statusFilter='all', itemFilter='';
+let rangeFrom=todayISO(), rangeTo=addDays(todayISO(),3), statusFilter='all', itemFilter='', itemsOpen=false;
 let searchQuery='', overdueMode=false;
 let density=localStorage.getItem('urth_density')||'cards';
 let editUnlocked=sessionStorage.getItem('urth_edit')==='1';
@@ -937,37 +928,40 @@ function renderKPIs(){
 function renderStatusTabs(){
   const all=inRange(); const counts={all:all.length};
   Object.keys(STATUS_META).forEach(k=>counts[k]=all.filter(o=>o.status===k).length);
-  /* Item buckets ride inside the All chip. Counted against the status filter but NOT the item
-     filter, so choosing one bucket doesn't zero out every other option in the list. */
+  /* Item buckets share the row with the status chips. Counted against the status filter but NOT
+     the item filter, so choosing one bucket doesn't zero out every other chip. */
   const base=all.filter(o=>statusFilter==='all'?o.status!=='cancelled':o.status===statusFilter);
   const items=new Map();
   base.forEach(o=>orderItems(o).forEach(it=>{
     const bk=itemBucket(it); items.set(bk,(items.get(bk)||0)+itemQty(it));
   }));
-  /* Keep a selected bucket listed even once the range no longer holds it, so the chip always
-     shows what is actually filtering the board instead of silently losing the filter. */
+  /* Keep a selected bucket on screen even once the range no longer holds it, so there is always
+     a lit chip to tap to get back out of the filter. */
   if(itemFilter&&!items.has(itemFilter))items.set(itemFilter,0);
-  /* biggest first, alphabetical within a tie, so the list doesn't reshuffle on every render */
+  /* biggest first, alphabetical within a tie, so the row doesn't reshuffle on every render */
   const rows=[...items.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-  const allOn=statusFilter==='all'&&!itemFilter;
-  const allChip=`<span class="stab stab-sel ${allOn?'on':''} ${itemFilter?'filtering':''}" style="--sc:#687259;--sbg:#E4EADF">`
-    +`<select id="allSelect" aria-label="Show everything, or filter by item">`
-    +`<option value="">All (${counts.all})</option>`
-    +(rows.length?`<optgroup label="By item">${rows.map(([bk,n])=>`<option value="i:${esc(bk)}">${esc(bk)} (${n})</option>`).join('')}</optgroup>`:'')
-    +`</select></span>`;
+  const chip=(on,attr,color,bg,label,count)=>
+    `<button class="stab ${on?'on':''}" ${attr} style="--sc:${color};--sbg:${bg}"><span class="sdot"></span>${label}<span class="scount">${count}</span></button>`;
   const el=document.getElementById('statusTabs');
-  el.innerHTML=allChip+Object.entries(STATUS_META).map(([k,m])=>
-    `<button class="stab ${statusFilter===k?'on':''}" data-stab="${k}" style="--sc:${m.color};--sbg:${m.bg}"><span class="sdot"></span>${m.label}<span class="scount">${counts[k]}</span></button>`).join('');
-  const sel=document.getElementById('allSelect');
-  sel.value=itemFilter?('i:'+itemFilter):'';
-  sel.onchange=()=>{
-    const v=sel.value;
-    /* "All" is the way back to everything — it clears the status filter too, not just the item. */
-    if(!v){statusFilter='all';itemFilter='';}
-    else itemFilter=v.slice(2);
-    renderHome();
-  };
+  el.innerHTML=chip(statusFilter==='all'&&!itemFilter,'data-allreset="1"','#687259','#E4EADF','All '+(itemsOpen?'▴':'▾'),counts.all)
+    +Object.entries(STATUS_META).map(([k,m])=>chip(statusFilter===k,`data-stab="${k}"`,m.color,m.bg,m.label,counts[k])).join('');
   el.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>{statusFilter=b.dataset.stab;renderHome();});
+  /* All both resets — it drops the item filter too, not just the status one — and opens the
+     item chips, which stay out of the way until they're asked for. */
+  el.querySelectorAll('[data-allreset]').forEach(b=>b.onclick=()=>{
+    statusFilter='all';itemFilter='';itemsOpen=!itemsOpen;renderHome();
+  });
+
+  const ib=document.getElementById('itemTabs');
+  if(!ib)return;
+  if(!itemsOpen||!rows.length){ib.style.display='none';ib.innerHTML='';return;}
+  ib.style.display='';
+  ib.innerHTML=rows.map(([bk,n])=>chip(itemFilter===bk,`data-ibucket="${esc(bk)}"`,'#7C4E2E','#F0E4D8',esc(bk),n)).join('');
+  ib.querySelectorAll('[data-ibucket]').forEach(b=>b.onclick=()=>{
+    const v=b.dataset.ibucket;
+    itemFilter=(v===itemFilter)?'':v;   /* tapping the lit chip clears it */
+    renderHome();
+  });
 }
 
 /* Counts are computed against the status filter but NOT the item filter, so the numbers stay

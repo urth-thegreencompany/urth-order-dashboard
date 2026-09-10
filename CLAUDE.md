@@ -159,22 +159,21 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
   - **Quick advance**: each card/row has a "Mark <next stage> →" button; the in-card **status
     stepper** (segmented bar over new→…→delivered) is tappable to jump stages. Status is advanced
     via `changeStatus`, which persists + toasts + is realtime-safe.
-  - **Item breakdown**: the status row's **All** chip is itself a `<select>` — its options are
-    "All (n)" plus an optgroup of item buckets, counting
+  - **Item breakdown**: tapping the status row's **All** chip opens a second chip row of item
+    buckets, styled exactly like the status chips, counting
     **items × qty**, not orders — one order holding a Verona and two plants contributes to three
     buckets. Bucketing (`itemBucket`): catalogue lines bucket by product name (Verona, Snowbell, a
     named planter, since `det` *is* the name there); Custom → "Custom Bouquet", Vase Arrangement →
     "Custom Vase", Loose/Subscription collapse to the type, because their `det` is free text that
     is unique per order and would make a bucket of one every time. Plants and dry flowers keep
-    their `det` ("Plant — Monstera"), already short and specific. Picking an option filters the
-    board via `itemFilter` in `passFilters`; picking **All** is the way back to everything and
-    clears the *status* filter too, not just the item one. It went chip row → its own dropdown
-    section → inside the All chip: the row overflowed once a range held more than a handful of
-    products, and a separate section cost vertical space for something that belongs in the filter
-    row. Because a dropdown reads much quieter than a highlighted chip, an active item filter
-    recolours the chip outright (`.stab-sel.filtering`). The chip has zero padding and the select
-    carries it instead, so the whole chip is the tap target — a native select can't be opened from
-    JS, so any padding outside it would be dead. Counts are computed
+    their `det` ("Plant — Monstera"), already short and specific. Tapping a bucket filters the
+    board via `itemFilter` in `passFilters`; tapping the lit one clears it. **All** does three
+    things: clears the item filter, resets the status filter, and toggles the bucket row open or
+    shut (its label carries a ▾/▴ to say so) — so the breakdown costs no vertical space until
+    it's asked for. The design went chip row → dropdown section → inside the All chip as a
+    `<select>` → this, on the owner's direction: always-on chips overflowed, and a dropdown read
+    too quiet. Item chips use the clay accent to stay visually distinct from the status colours.
+    Counts are computed
     against the status filter but *not* the item filter, so selecting one bucket doesn't zero out
     every other option, and a selected bucket the range no longer contains is still listed at 0
     rather than silently dropping the filter.
