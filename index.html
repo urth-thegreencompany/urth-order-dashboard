@@ -137,7 +137,11 @@
   .fileitem .fname{display:block; font-size:12.5px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px}
   .fileitem .fsize{display:block; font-size:11px; color:var(--green-soft)}
   .fileitem .frm{border:none; background:none; color:var(--urgent); font-size:15px; font-weight:800; padding:2px 6px; cursor:pointer; flex:none}
+  .vis-hidden{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0}
+  label.addbtn{display:inline-block; text-align:center}
+  .vis-hidden:focus-visible+label.addbtn{outline:2px solid var(--green); outline-offset:2px}
   .fileprog{font-size:12px; color:var(--green-soft); font-style:italic}
+  .fileprog.err{color:var(--urgent); font-style:normal; font-weight:700}
   .files-row{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
   .filechip{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:#fff; border-radius:10px; padding:4px 9px 4px 4px; font-size:12px; font-weight:700; color:var(--green); cursor:pointer; max-width:100%}
   .filechip img{width:30px; height:30px; border-radius:6px; object-fit:cover; background:var(--cream-2); display:block; flex:none}
@@ -614,8 +618,8 @@
         <label>Photos &amp; files <span class="lab-hint">reference images or a PDF · optional</span></label>
         <div class="filelist" id="fFileList"></div>
         <div class="addperson">
-          <input type="file" id="fFileInput" accept="image/*,application/pdf" multiple style="display:none" />
-          <button type="button" class="addbtn" id="fFileBtn">＋ Upload photo / PDF</button>
+          <input type="file" id="fFileInput" class="vis-hidden" accept="image/*,application/pdf" multiple />
+          <label class="addbtn" for="fFileInput" id="fFileBtn">＋ Upload photo / PDF</label>
           <span class="fileprog" id="fFileProg"></span>
         </div>
       </div>
@@ -1525,18 +1529,26 @@ async function addFormFiles(list){
   for(let i=0;i<files.length;i++){
     const raw=files[i];
     if(raw.size>MAX_FILE_MB*1024*1024){toast(`<b>${esc(raw.name)}</b> is over ${MAX_FILE_MB}MB — skipped.`);continue;}
+    prog.classList.remove('err');
     prog.textContent=`Uploading ${i+1} of ${files.length}…`;
     const f=await shrinkImage(raw);
     const path=`${formFileKey}/${Date.now().toString(36)}${Math.random().toString(36).slice(2,7)}-${safeFileName(f.name)}`;
     const {error}=await db.storage.from(FILES_BUCKET).upload(path,f,{contentType:f.type||'application/octet-stream'});
-    if(error){prog.textContent='';toast('Upload failed: '+esc(error.message));continue;}
+    if(error){
+      const why=(error.message||'').toLowerCase();
+      const hint=/bucket not found|not found/.test(why)?' — the order-files bucket is missing; run the migration SQL.'
+                :/row-level security|policy|unauthorized|403/.test(why)?' — storage policies are missing for order-files.':'';
+      prog.classList.add('err');
+      prog.textContent='Upload failed: '+error.message+hint;
+      toast('Upload failed: '+esc(error.message));
+      continue;
+    }
     formUploads.push(path);
     formFiles.push({path,name:f.name,type:f.type||'',size:f.size});
     renderFormFiles();
   }
-  prog.textContent='';
+  if(!prog.classList.contains('err'))prog.textContent='';
 }
-document.getElementById('fFileBtn').onclick=()=>document.getElementById('fFileInput').click();
 document.getElementById('fFileInput').onchange=async e=>{const l=e.target.files;e.target.value='';if(l&&l.length)await addFormFiles(l);};
 /* Abandoning the form (Cancel, ‹ Back, or the phone's back gesture) shouldn't leave uploads
    stranded in the bucket with nothing pointing at them. */
@@ -1548,7 +1560,7 @@ function discardFormUploads(){
 function resetFormFiles(id){
   formSaving=false; formUploads=[]; formFileKey=fileKeyFor(id);
   formFiles=id===null?[]:orderFiles(byId(id)).map(f=>({...f}));
-  const prog=document.getElementById('fFileProg'); if(prog)prog.textContent='';
+  const prog=document.getElementById('fFileProg'); if(prog){prog.textContent='';prog.classList.remove('err');}
   renderFormFiles();
 }
 
