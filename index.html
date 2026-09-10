@@ -1549,7 +1549,17 @@ async function addFormFiles(list){
   }
   if(!prog.classList.contains('err'))prog.textContent='';
 }
-document.getElementById('fFileInput').onchange=async e=>{const l=e.target.files;e.target.value='';if(l&&l.length)await addFormFiles(l);};
+/* input.files is a LIVE FileList, so it has to be copied into a real array before the input is
+   cleared — clearing it empties the very list we're about to read, silently uploading nothing.
+   (The input is cleared so picking the same file twice in a row still fires change.) */
+document.getElementById('fFileInput').onchange=async e=>{
+  const picked=Array.from(e.target.files||[]);
+  e.target.value='';
+  if(!picked.length)return;
+  const prog=document.getElementById('fFileProg');
+  try{ await addFormFiles(picked); }
+  catch(err){ prog.classList.add('err'); prog.textContent='Upload failed: '+((err&&err.message)||err); }
+};
 /* Abandoning the form (Cancel, ‹ Back, or the phone's back gesture) shouldn't leave uploads
    stranded in the bucket with nothing pointing at them. */
 function discardFormUploads(){
