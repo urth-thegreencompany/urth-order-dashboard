@@ -823,7 +823,7 @@ async function loadAll(){
   showIf('filesField',HAS_FILES); showIf('recvField',HAS_RECV_PHONE);
   ORDERS=await fetchAllOrders(); recomputeRepeat();
   /* shop walk-in/WhatsApp sequence is #2xxx; ignore 6-digit Shopify-style numbers so auto-assign stays in the tidy range */
-  NEXT_NO=Math.max(2000,...ORDERS.map(o=>{const n=parseInt(String(o.no||'').replace(/\D/g,''))||0;return n<100000?n:0;}))+1;
+  NEXT_NO=computeNextNo();
   const p=await db.from('products').select('*').order('name');
   CATALOG=(p.data||[]).map(x=>({id:x.id,name:x.name,type:x.type,price:x.price_inr||0,flowers:x.flowers||''}));
   LOOSE=computeLoose();
@@ -850,6 +850,19 @@ async function loadStaff(){
   const ow=data.filter(r=>r.role==='owner').map(r=>r.name);
   if(mk.length)MAKERS=mk;
   OWNERS=ow;
+}
+
+/* reduce, not Math.max(...spread): Safari caps spread arguments well below the row count this
+   table will reach. Re-run on every realtime INSERT so two people adding at once don't both get
+   the number that was current when they opened the form. */
+function computeNextNo(){
+  return ORDERS.reduce((mx,o)=>{const n=parseInt(String(o.no||'').replace(/\D/g,''))||0;return n<100000&&n>mx?n:mx;},2000)+1;
+}
+function refreshNextNo(){
+  const n=computeNextNo(); if(n===NEXT_NO)return;
+  NEXT_NO=n;
+  const form=document.getElementById('scrim');
+  if(form&&form.classList.contains('show')&&editId===null)toggleNoField();
 }
 
 /* ===== helpers ===== */
@@ -1206,20 +1219,25 @@ function renderHome(){
   const eo=document.getElementById('exitOverdue'); if(eo)eo.onclick=()=>{overdueMode=false;renderHome();};
   const bb=document.getElementById('beyondBtn'); if(bb)bb.onclick=()=>{const to=rangeToSafe();const mx=ORDERS.filter(o=>o.dd>to&&o.status!=='cancelled').reduce((a,o)=>o.dd>a?o.dd:a,to);setRange(rangeFrom,mx);};
 }
+/* Scoped to the board host: the add/edit form also emits [data-edit]/[data-file] (staged-item ✎,
+   attachment chips) and the hidden Products tab emits [data-del]. A document-wide bind here used
+   to hijack those whenever a realtime event re-rendered Home mid-form — tapping ✎ on a staged
+   item then opened an unrelated order and wiped everything typed. */
 function bindCards(){
-  document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.step,b.dataset.s));
-  document.querySelectorAll('[data-adv]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.adv,b.dataset.next));
-  document.querySelectorAll('[data-addmaker]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.addmaker);if(!o||!s.value)return;o.makers=((o.makers&&o.makers.length)?o.makers:(o.maker?[o.maker]:[])).slice();if(!o.makers.includes(s.value))o.makers.push(s.value);o.maker=o.makers.join(', ');renderCurrent();pushUpdate(o.id,{makers:o.makers,maker:o.maker});toast(`Added maker <b>${esc(s.value)}</b> to ${esc(o.cust)} · ${esc(o.no)}.`);});
-  document.querySelectorAll('[data-addowner]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.addowner);if(!o||!s.value)return;o.owners=(o.owners||[]).slice();if(!o.owners.includes(s.value))o.owners.push(s.value);renderCurrent();pushUpdate(o.id,{owners:o.owners});toast(`Added owner <b>${esc(s.value)}</b> to ${esc(o.cust)} · ${esc(o.no)}.`);});
-  document.querySelectorAll('[data-urg]').forEach(b=>b.onclick=()=>{if(!editUnlocked)return;const o=byId(+b.dataset.urg);if(!o)return;o.urgent=!o.urgent;renderCurrent();pushUpdate(o.id,{urgent:o.urgent});});
-  document.querySelectorAll('[data-addr]').forEach(b=>b.onclick=()=>document.getElementById('addr-'+b.dataset.addr).classList.toggle('show'));
-  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(+b.dataset.edit));
-  document.querySelectorAll('[data-resc]').forEach(b=>b.onclick=()=>openReschedule(+b.dataset.resc));
-  document.querySelectorAll('[data-cxl]').forEach(b=>b.onclick=()=>confirmCancel(b,+b.dataset.cxl));
-  document.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.restore,'new'));
-  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>confirmDelete(b,+b.dataset.del));
-  document.querySelectorAll('[data-file]').forEach(b=>b.onclick=()=>openFile(b.dataset.file));
-  document.querySelectorAll('[data-files]').forEach(b=>b.onclick=()=>{
+  const root=document.getElementById('days'); if(!root)return;
+  root.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.step,b.dataset.s));
+  root.querySelectorAll('[data-adv]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.adv,b.dataset.next));
+  root.querySelectorAll('[data-addmaker]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.addmaker);if(!o||!s.value)return;o.makers=((o.makers&&o.makers.length)?o.makers:(o.maker?[o.maker]:[])).slice();if(!o.makers.includes(s.value))o.makers.push(s.value);o.maker=o.makers.join(', ');renderCurrent();pushUpdate(o.id,{makers:o.makers,maker:o.maker});toast(`Added maker <b>${esc(s.value)}</b> to ${esc(o.cust)} · ${esc(o.no)}.`);});
+  root.querySelectorAll('[data-addowner]').forEach(s=>s.onchange=()=>{if(!editUnlocked)return;const o=byId(+s.dataset.addowner);if(!o||!s.value)return;o.owners=(o.owners||[]).slice();if(!o.owners.includes(s.value))o.owners.push(s.value);renderCurrent();pushUpdate(o.id,{owners:o.owners});toast(`Added owner <b>${esc(s.value)}</b> to ${esc(o.cust)} · ${esc(o.no)}.`);});
+  root.querySelectorAll('[data-urg]').forEach(b=>b.onclick=()=>{if(!editUnlocked)return;const o=byId(+b.dataset.urg);if(!o)return;o.urgent=!o.urgent;renderCurrent();pushUpdate(o.id,{urgent:o.urgent});});
+  root.querySelectorAll('[data-addr]').forEach(b=>b.onclick=()=>document.getElementById('addr-'+b.dataset.addr).classList.toggle('show'));
+  root.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(+b.dataset.edit));
+  root.querySelectorAll('[data-resc]').forEach(b=>b.onclick=()=>openReschedule(+b.dataset.resc));
+  root.querySelectorAll('[data-cxl]').forEach(b=>b.onclick=()=>confirmCancel(b,+b.dataset.cxl));
+  root.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>changeStatus(+b.dataset.restore,'new'));
+  root.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>confirmDelete(b,+b.dataset.del));
+  root.querySelectorAll('[data-file]').forEach(b=>b.onclick=()=>openFile(b.dataset.file));
+  root.querySelectorAll('[data-files]').forEach(b=>b.onclick=()=>{
     const panel=document.getElementById('files-'+b.dataset.files); if(!panel)return;
     panel.classList.toggle('show');
     if(panel.classList.contains('show'))hydrateThumbs(panel);
@@ -1268,7 +1286,7 @@ async function deleteOrder(id){
 let reId=null;
 function openReschedule(id){if(!requireEdit())return;const o=byId(id);if(!o)return;reId=id;document.getElementById('reInfo').textContent=`${o.no} · ${o.cust} — currently ${fmtDayDate(o.dd)}`;document.getElementById('reDate').value=o.dd;openSheet('rescrim');}
 document.getElementById('reCancel').onclick=()=>closeSheet('rescrim');
-document.getElementById('rescrim').onclick=e=>{if(e.target.id==='rescrim')closeSheet('rescrim');};
+onScrimTap('rescrim',()=>closeSheet('rescrim'));
 document.getElementById('reSave').onclick=()=>{
   const nd=document.getElementById('reDate').value;if(!nd)return;
   const o=byId(reId);if(!o)return;const old=o.dd;o.dd=nd;closeSheet('rescrim');renderCurrent();
@@ -1672,8 +1690,16 @@ document.addEventListener('paste',e=>{
   if(!sc||!sc.classList.contains('show'))return;
   const files=clipboardFiles(e.clipboardData);
   if(!files.length)return;
+  /* Excel/Numbers/Sheets put a rendered PNG of the cells on the clipboard alongside the text, so
+     "has an image" isn't enough to claim the paste: a name copied from the old order sheet into
+     the Customer field would vanish and an image of the cell got attached instead. Into a text
+     field with text on the clipboard, the text wins; the zone (or a pure image) still takes the file. */
+  const pz=document.getElementById('pasteZone'), t=e.target;
+  const inField=t&&t!==pz&&t.matches&&t.matches('input,textarea,select,[contenteditable]');
+  const hasText=!!(e.clipboardData&&e.clipboardData.getData('text/plain'));
+  if(inField&&hasText)return;
   e.preventDefault();
-  const pz=document.getElementById('pasteZone'); if(pz)pz.textContent='';
+  if(pz)pz.textContent='';
   ingestFiles(files.map(namePasted));
 });
 /* A file dropped just outside the zone would otherwise navigate the tab to it and take a
@@ -1853,7 +1879,7 @@ function notifyStatus(nw){
 function startRealtime(){
   db.channel('orders-live').on('postgres_changes',{event:'*',schema:'public',table:'orders'},payload=>{
     const {eventType,new:nw,old:od}=payload;
-    if(eventType==='INSERT'){if(!ORDERS.find(o=>o.id===nw.id)){ORDERS.push(fromDB(nw));recomputeRepeat();}}
+    if(eventType==='INSERT'){if(!ORDERS.find(o=>o.id===nw.id)){ORDERS.push(fromDB(nw));recomputeRepeat();}refreshNextNo();}
     else if(eventType==='UPDATE'){const i=ORDERS.findIndex(o=>o.id===nw.id);const prev=i>=0?ORDERS[i].status:null;if(i>=0)ORDERS[i]=fromDB(nw);
       if(nw.status!==prev&&!recentLocal.has(nw.id+':'+nw.status))notifyStatus(nw);}
     else if(eventType==='DELETE'){const i=ORDERS.findIndex(o=>o.id===od.id);if(i>=0)ORDERS.splice(i,1);}
@@ -1885,8 +1911,18 @@ document.getElementById('editUnlockBtn').onclick=()=>{
   else document.getElementById('editErr').textContent='Incorrect passcode. Try again.';
 };
 document.getElementById('editPass').onkeydown=e=>{if(e.key==='Enter')document.getElementById('editUnlockBtn').click();};
-document.getElementById('editGate').onclick=e=>{if(e.target.id==='editGate')closeSheet('editGate');};
-scrim.onclick=e=>{if(e.target===scrim)closeForm();};
+onScrimTap('editGate',()=>closeSheet('editGate'));
+onScrimTap('scrim',closeForm);
+/* Tapping the dim backdrop closes a sheet — but a click's target is the common ancestor of where
+   the mouse went down and where it came up, so on a desktop, drag-selecting text in a field and
+   releasing past the sheet's edge used to register as a backdrop click and throw the form away.
+   Only count it when the press started on the backdrop too. */
+function onScrimTap(id,fn){
+  const el=document.getElementById(id); if(!el)return;
+  let pressedOnScrim=false;
+  el.addEventListener('pointerdown',e=>{pressedOnScrim=e.target===el;});
+  el.addEventListener('click',e=>{const ok=pressedOnScrim&&e.target===el;pressedOnScrim=false;if(ok)fn();});
+}
 /* mobile back handling for sheets */
 function openSheet(id){document.getElementById(id).classList.add('show');history.pushState({sheet:id},'');}
 function closeSheet(id){const el=document.getElementById(id);if(!el||!el.classList.contains('show'))return;if(history.state&&history.state.sheet){history.back();}else{el.classList.remove('show');}}
