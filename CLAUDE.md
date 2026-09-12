@@ -119,8 +119,10 @@ any `authenticated` user can select/insert/update/delete within `bucket_id = 'or
   1600px JPEG client-side before upload (phone shots are 4-8MB; the free tier is 1GB).
   Files arrive three ways, all through `ingestFiles`: the picker, **paste**, and drag-and-drop.
   The paste listener sits on `document` (so a paste lands wherever focus is in the form) but only
-  claims the event when the clipboard actually holds a file — pasting text into a field is
-  untouched. The paste zone is `contenteditable` purely because iOS won't raise a paste event on a
+  claims the event when the clipboard holds a file **and** either the target is the paste zone or
+  the clipboard has no text — Excel/Numbers/Sheets put a PNG of the copied cells on the Mac
+  clipboard alongside the text, so "has an image" alone would swallow a name pasted into a field
+  (it did, until 2026-09-12). Pasting text into a field is untouched. The paste zone is `contenteditable` purely because iOS won't raise a paste event on a
   plain div; anything typed into it is wiped on `input`. Clipboard images come named "image.png"
   or unnamed, so they're renamed `pasted-<timestamp>.<ext>`. While the form is open the page
   swallows stray drops, since a file dropped just outside the zone would navigate the tab to it
@@ -210,7 +212,15 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
   build if this ever needs to scale), "Quicksand" for body text.
 - Mobile is the primary usage surface — ops/logistics use phones. Sheets (add/edit order,
   reschedule) are bottom-sheet style with a sticky "‹ Back" button and support the phone's
-  native back gesture (via `history.pushState`/`popstate`) to close.
+  native back gesture (via `history.pushState`/`popstate`) to close. But a growing share of
+  use is **MacBooks in a shared office**, which surfaced a class of bugs invisible on one
+  phone (fixed 2026-09-12): backdrop-click-to-close must check the press *started* on the
+  backdrop (`onScrimTap`), since a drag-select released outside the sheet is a "click" on it;
+  `bindCards()` must stay scoped to `#days`, because a realtime re-render of Home while the
+  form is open would otherwise rebind the form's own `[data-edit]` buttons to `openEdit`; and
+  `NEXT_NO` is recomputed on every realtime INSERT (`refreshNextNo`) so two people adding at
+  once don't share a number. When adding a `[data-*]` attribute to the form or a hidden tab,
+  check it doesn't collide with one the board binds.
 
 ## Not yet built (known next steps)
 - Shopify webhook integration (`orders/create` → Supabase Edge Function) to auto-ingest
@@ -259,9 +269,10 @@ CSV. Known data-quality issues inherited from that sheet, not yet cleaned:
   using a personal GitHub account that has since been permanently deleted; password reset is
   refused because the account has no password. Recovery is with Supabase Support.
   The **app is unaffected** — dashboard access and staff auth are separate systems.
-- Consequence: **no migrations can be run.** Three are pending, so `attachments`,
-  `receiver_phone` and `polaroid_qty` are shipped in the code but dormant in production
-  (the `HAS_*` probes hide them). See `backup/schema/MIGRATION-STATUS.md`.
+- Consequence: **no migrations can be run.** `polaroid_qty` and `push_subscriptions` are still
+  missing (the `HAS_*` probes hide the polaroid stepper). `receiver_phone` and `attachments`
+  **are** present as of a 2026-09-12 probe, so the attachment/receiver UI is live; whether the
+  `order-files` bucket exists is unverified. See `backup/schema/MIGRATION-STATUS.md`.
 - **`backup/` holds the disaster-recovery kit**: `export.py` (all data + attachments via a
   staff login), `encrypt.sh`/`decrypt.sh`, `schema/schema.sql` (rebuild from zero), plus
   `HANDOFF.md` and `OWNERSHIP-MIGRATION.md`. Raw exports land in gitignored `backup/data/`;

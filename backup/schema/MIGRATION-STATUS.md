@@ -16,8 +16,15 @@ a missing table returns 404). No dashboard access was needed or used.
 | Migration | Missing in production |
 |---|---|
 | `polaroid_qty_2026-08-12.sql` | `orders.polaroid_qty` |
-| `receiver_phone_and_files_2026-09-10.sql` | `orders.receiver_phone`, `orders.attachments`, and the `order-files` bucket |
 | `push_setup_2026-07-20.sql` | the whole `push_subscriptions` table |
+
+**Correction (probed 2026-09-12):** `orders.receiver_phone` and `orders.attachments` **do exist**
+in production — `select` on both returns 200 with the anon key — so `HAS_FILES` and
+`HAS_RECV_PHONE` are true and the attachments + receiver-number UI is live for staff. Somebody
+ran `receiver_phone_and_files_2026-09-10.sql` after all. Whether the `order-files` **bucket** and
+its storage policies exist can't be confirmed with the anon key (a list on a real and a fake
+bucket both return `[]` under RLS); if uploads fail with "bucket not found", that half of the
+migration still needs to run. `polaroid_qty` and `push_subscriptions` remain missing.
 
 ### What this means in practice
 
