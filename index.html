@@ -832,6 +832,7 @@ async function loadAll(){
   SUBS=(s.data||[]).map(x=>({id:x.id,client:x.client,type:x.type,day:x.preferred_day,status:x.status,val:x.value_inr||0,prefs:x.flower_prefs||'',last:x.last_delivery,end:x.end_date,freq:x.frequency||'Weekly',dur:x.duration_months||1,deliv:x.delivery_inr||0,total:x.total_inr||0}));
   await syncExpiredSubs();
   await loadStaff();
+  await fixStaffNames();
 }
 /* Anything whose end date has passed is Expired — flip it locally and persist once, so the
    Supabase row stops saying "On-Going" months after the plan ended. Silent: a failed write just
@@ -850,6 +851,49 @@ async function loadStaff(){
   const ow=data.filter(r=>r.role==='owner').map(r=>r.name);
   if(mk.length)MAKERS=mk;
   OWNERS=ow;
+}
+/* One-off spelling repairs for staff names that were typed wrong when the person was first
+   added. There's no rename control in the app and no SQL access (the Supabase dashboard is
+   locked out), so the app repairs its own data on load: the `staff` row, plus any order whose
+   makers/owners array still carries the old spelling. Matched case-insensitively, idempotent,
+   and silent on failure — a failed write just means the next load tries again. Same
+   fix-it-locally-then-persist pattern as syncExpiredSubs. Delete an entry once it has run
+   everywhere; leaving it costs one no-op pass over ORDERS. */
+const NAME_FIXES=[{role:'owner',from:'sowniya',to:'Sowmiya'}];
+async function fixStaffNames(){
+  for(const fix of NAME_FIXES){
+    const hit=fix.from.toLowerCase(), isMaker=fix.role==='maker';
+    const roster=isMaker?MAKERS:OWNERS, key=isMaker?'makers':'owners';
+    let fixed=0;
+    /* the roster row itself. If the correct spelling is already there as a second person, the
+       misspelled row is deleted rather than renamed — unique(name,role) would reject the rename. */
+    const bad=roster.find(n=>n&&n.toLowerCase()===hit&&n!==fix.to);
+    if(bad){
+      const already=roster.includes(fix.to);
+      roster.splice(roster.indexOf(bad),1);
+      if(!already){roster.push(fix.to);roster.sort((a,b)=>a.localeCompare(b));}
+      const q=db.from('staff');
+      const {error}=await (already?q.delete():q.update({name:fix.to})).eq('role',fix.role).eq('name',bad);
+      if(!error)fixed++;
+    }
+    /* and every order that recorded them under the old spelling */
+    const touched=ORDERS.filter(o=>{
+      const list=Array.isArray(o[key])?o[key]:null;
+      if(!list||!list.some(n=>n&&n.toLowerCase()===hit))return false;
+      const next=[];
+      list.forEach(n=>{const v=(n&&n.toLowerCase()===hit)?fix.to:n;if(v&&!next.includes(v))next.push(v);});
+      o[key]=next;
+      if(isMaker)o.maker=next.join(', ')||null;
+      return true;
+    });
+    for(const o of touched){
+      const patch={[key]:o[key].length?o[key]:null};
+      if(isMaker)patch.maker=o.maker;
+      const {error}=await db.from('orders').update(patch).eq('id',o.id);
+      if(!error)fixed++;
+    }
+    if(fixed)toast(`Spelling fixed — <b>${esc(fix.to)}</b>${touched.length?` (${touched.length} order${touched.length!==1?'s':''} updated)`:''}.`);
+  }
 }
 
 /* reduce, not Math.max(...spread): Safari caps spread arguments well below the row count this

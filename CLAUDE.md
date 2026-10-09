@@ -134,6 +134,17 @@ any `authenticated` user can select/insert/update/delete within `bucket_id = 'or
 - **Urgent** is a boolean toggle (⚡) that visually rings the card and sorts it to the top of
   its delivery-time slot.
 
+- **Staff name spelling fixes**: there is no rename control for a maker/owner and no SQL access,
+  so a name typed wrong when the person was first added is repaired by the app itself.
+  `NAME_FIXES` (next to `loadStaff`) lists `{role,from,to}` entries and `fixStaffNames()` runs on
+  every load: it renames the `staff` row (deleting it instead if the correct spelling already
+  exists as a second row, since `unique(name,role)` would reject the rename) and rewrites any
+  order whose `makers`/`owners` array still carries the old spelling, recomputing the derived
+  `maker` text for maker fixes. Matched case-insensitively, idempotent (zero writes once clean),
+  silent on failure so the next load retries — the same local-fix-then-persist shape as
+  `syncExpiredSubs`. Entries can be deleted once production is clean; leaving one costs a no-op
+  pass over `ORDERS`. Applied so far: `sowniya` → `Sowmiya` (owner, Oct 2026).
+
 ## Original data source
 Historical orders (~7,675 rows, April 2024 – July 2026) were extracted from a legacy
 "Master Order Sheet" Excel workbook with a new tab per month, and imported into Supabase via
